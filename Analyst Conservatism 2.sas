@@ -335,18 +335,6 @@ data ibescrsp2;
  if permno=. then delete;
 run;
 
-/*CCM link;
-data linktable;
- set crsp.ccmxpf_linktable;
-run;
-
-data linktable2;
- set linktable;
- if lpermno=. then delete;*Delete if missing PERMNO;
- yearbeg=year(linkdt);
- yearend=year(linkenddt);
-run;*/
-
 *Merge GVKEY back;
 proc sql;
  create table ibescompstat
@@ -538,6 +526,7 @@ data compustatcrsp2;
  if permno=. then delete;
 run;
 
+*This step is to get returns for computing C-Score;
 proc sort data=compustatcrsp2 out=ccm2 nodupkey; by permno datadate; run;
 
 data upload;
@@ -819,7 +808,7 @@ run;
 proc sort data=ma nodupkey; by gvkey fyear; run;
 
 *Winsorize;
-%Winsorize_Truncate(dsetin = ma, dsetout = winsor, byvar = none, vars = size mtb lev, type = W, pctl = 1 99);
+%Winsorize_Truncate(dsetin = ma, dsetout = winsor, byvar = none, vars = assets size mtb lev, type = W, pctl = 1 99);
 
 proc sort data=winsor; by gvkey fyear; run;
 
