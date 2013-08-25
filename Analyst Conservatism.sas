@@ -1,5 +1,5 @@
-*libname temp 'C:\Users\Temp\Documents\Summer 2013';
-libname temp 'D:\ay32\My Documents\Fall 2013';
+libname temp 'C:\Users\Temp\Documents\Fall 2013';
+*libname temp 'D:\ay32\My Documents\Fall 2013';
 
 /**********************************************************************************************/
 /* FILENAME:        Winsorize_Truncate.sas                                                    */
@@ -257,18 +257,6 @@ data ibescrsp2;
  if permno=. then delete;
 run;
 
-/*CCM link;
-data linktable;
- set crsp.ccmxpf_linktable;
-run;
-
-data linktable2;
- set linktable;
- if lpermno=. then delete;*Delete if missing PERMNO;
- yearbeg=year(linkdt);
- yearend=year(linkenddt);
-run;*/
-
 *Merge GVKEY back;
 proc sql;
  create table ibescompstat
@@ -413,10 +401,10 @@ proc sort data=allobs; by gvkey year post descending treat; run;
 proc sort data=allobs out=allobs2 nodupkey; by gvkey year post; run;
 
 *This is the dataset containing the indicator variables for the natural experiment and coverage;
-data allobs3;
+data ibescov;
  set allobs2;
  posttreat=post*treat;
- if 1993 le year(datadate) le 2006;
+ if 1993 le year le 2006;
 run;
 
 *Now get the COMPUSTAT data;
@@ -732,7 +720,7 @@ data screen2;
 run;
 
 *Noncentered;
-proc expand data=screen out = ma;
+proc expand data=screen2 out = ma;
  by gvkey;
  convert conacc = conacc_ma / transformout=(movave 3);
 run;
@@ -876,32 +864,58 @@ data conacc;
  con=conacc_ma*(-1);
 run;
 
-proc download data=cscore; run;
-proc download data=conacc; run;
+*Merge cscore and conacc and IBES dataset;
+proc sql;*http://sbaleone.bus.miami.edu/PERLCOURSE/SASFILES/SQL_EXAMPLES.sas;
+ create table cscoreibes
+ as select a.*, b.coverage
+ from cscore a left join ibescov b
+ on (a.gvkey=b.gvkey) and (a.year=b.year);
+quit;
+
+data cscoreibes2;
+ set cscoreibes;
+ if coverage=. then delete;
+ if cscore=. then delete;
+run;
+
+proc sql;*http://sbaleone.bus.miami.edu/PERLCOURSE/SASFILES/SQL_EXAMPLES.sas;
+ create table conaccibes
+ as select a.*, b.coverage
+ from conacc a left join ibescov b
+ on (a.gvkey=b.gvkey) and (a.year=b.year);
+quit;
+
+data conaccibes2;
+ set conaccibes;
+ if coverage=. then delete;
+ if con=. then delete;
+run;
+
+proc sort data=cscoreibes2; by gvkey year post descending treat; run;
+proc sort data=cscoreibes2 out=cscoreibes3 nodupkey; by gvkey year post; run;
+proc sort data=conaccibes2; by gvkey year post descending treat; run;
+proc sort data=conaccibes2 out=conaccibes3 nodupkey; by gvkey year post; run;
+
+proc sort data=cscoreibes3; by gvkey merger year post treat; run;
+proc sort data=conaccibes3; by gvkey merger year post treat; run;
+
+proc download data=cscoreibes3; run;
+proc download data=conaccibes3; run;
 
 endrsubmit;
 
+*Save;
 data temp.cscore;
- set cscore;
+ set cscoreibes3;
 run;
 
 data temp.conacc;
- set conacc;
+ set conaccibes3;
 run;
 
-/*data test;
- set temp.cscore;
- if 1993 le year le 2006;
+*Export to STATA;
+proc export data=temp.cscore outfile= "C:\Users\Temp\Documents\Fall 2013\cscore.dta" replace;
 run;
 
-data test2;
- set temp.conacc;
- if 1993 le year le 2006;
-run;*/
-
-*Export;
-proc export data=temp.cscore outfile= "D:\ay32\My Documents\Fall 2013\cscore.dta" replace;
-run;
-
-proc export data=temp.conacc outfile= "D:\ay32\My Documents\Fall 2013\conacc.dta" replace;
+proc export data=temp.conacc outfile= "C:\Users\Temp\Documents\Fall 2013\conacc.dta" replace;
 run;
