@@ -115,7 +115,7 @@ eststo clear
 clear
 // clear matrix
 
-use /mnt/home/ay32/STATA/tradefrq2.dta
+use /mnt/home/ay32/STATA/tradefrq.dta
 
 // Set the data as a panel
 destring gvkey, replace
