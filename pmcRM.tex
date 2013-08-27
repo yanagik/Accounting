@@ -1,0 +1,499 @@
+\documentclass[notitlepage, 12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{verbatim,amsmath,graphicx,amssymb,amsfonts,amsthm,enumerate,setspace,natbib,hyperref,booktabs,siunitx,caption,threeparttable,epstopdf}
+\doublespacing
+
+%http://www.jwe.cc/2012/03/stata-latex-tables-estout/
+% *****************************************************************
+% Estout related things
+% *****************************************************************
+\newcommand{\sym}[1]{\rlap{#1}}% Thanks to David Carlisle
+
+\let\estinput=\input% define a new input command so that we can still flatten the document
+
+\newcommand{\estwide}[3]{
+		\vspace{.75ex}{
+			\begin{tabular*}
+			{\textwidth}{@{\hskip\tabcolsep\extracolsep\fill}l*{#2}{#3}}
+			\toprule
+			\estinput{#1}
+			\bottomrule
+			\addlinespace[.75ex]
+			\end{tabular*}
+			}
+		}	
+
+\newcommand{\estauto}[3]{
+		\vspace{.75ex}{
+			\begin{tabular}{l*{#2}{#3}}
+			\toprule
+			\estinput{#1}
+			\bottomrule
+			\addlinespace[.75ex]
+			\end{tabular}
+			}
+		}
+
+% Allow line breaks with \\ in specialcells
+	\newcommand{\specialcell}[2][c]{%
+	\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
+
+% *****************************************************************
+% Custom subcaptions
+% *****************************************************************
+% Note/Source/Text after Tables
+\newcommand{\figtext}[1]{
+	%\vspace{-1.9ex}
+	\captionsetup{justification=justified,font=footnotesize}
+	\caption*{\hspace{6pt}\hangindent=1.5em #1}
+	}
+\newcommand{\fignote}[1]{\figtext{\emph{Note:~}~#1}}
+
+\newcommand{\figsource}[1]{\figtext{\emph{Source:~}~#1}}
+
+% Add significance note with \starnote
+\newcommand{\starnote}{\figtext{* $p < 0.1$, ** $p < 0.05$, *** $p < 0.01$. Standard errors in parentheses.}}
+
+% Note/Source/Text after Tables
+%http://www.jwe.cc/2012/08/latex-and-stata-integration-solving-some-problems/
+\newcommand{\Figtext}[1]{%
+ \begin{tablenotes}[para,flushleft]
+ \hspace{6pt}
+ \hangindent=1.75em
+ #1
+ \end{tablenotes}
+}
+
+\newcommand{\Fignote}[1]{\Figtext{\emph{Note:~}~#1}}
+\newcommand{\Figsource}[1]{\Figtext{\emph{Source:~}~#1}}
+\newcommand{\Starnote}{\Figtext{* p < 0.1, ** p < 0.05, *** p < 0.01. Standard errors in parentheses.}}% Add significance note with \starnote
+
+% *****************************************************************
+% siunitx
+% *****************************************************************
+%\usepackage{siunitx} % centering in tables
+	\sisetup{
+		detect-mode,
+		tight-spacing		= true,
+		group-digits		= false ,
+		input-signs		= ,
+		input-symbols		= ( ) [ ] - + *,
+		input-open-uncertainty	= ,
+		input-close-uncertainty	= ,
+		table-align-text-post	= false
+        }
+
+\title{Product Market Competition and Real Activities Manipulation}
+\author{Alex Young}
+
+\setcounter{secnumdepth}{5}
+\setcounter{tocdepth}{5}
+
+\begin{document}
+\maketitle
+%\setcounter{page}{1}
+\begin{abstract}
+\noindent I find evidence consistent with product market competition constraining managers from engaging in overproduction to meet or beat earnings benchmarks (zero earnings or last year's earnings). Using reductions of import tariff rates to capture exogenous changes in competitive intensity, I show that on average before a competitive shock, there is evidence of overproduction to avoid reporting negative earnings or a negative change in earnings, but after a competitive shock, there is no evidence of managers' engaging in overproduction to meet or beat earnings benchmarks. Results are similar in sign but insignificant when abnormal R\&D expense is used to measure real activities manipulation.
+\end{abstract}
+\newpage
+
+%; research on real activities manipulation is scarce compared to that of accruals-based earnings management \citet*{dgs:2010} state ``it would also be interesting to investigate macroeconomic conditions as a determinant of earnings quality.'' But an opposing view that competitive pressure induces managerial myopia and hence increases earnings management is also plausible \citep*{kst:2012}. \citet{shleifer:2004} illustrates how ``conduct described as unethical \ldots is sometimes a consequence of market competition.'' Essentially, competition can lead to the spread of certain ``unethical'' practices among competitors if refusing to undertake the practice would result in a competitive disadvantage.
+
+\section{Introduction}
+The notion that competitive pressures limit agency problems and result in higher efficiency is widespread \citep{bd:2004}. For example, \citet{gm:2011} write, ``economists often argue that managers of firms in competitive industries have strong incentives to reduce slack and maximize profits, or else the firm will go out of business.'' If one takes the view that earnings management is a myopic choice undertaken to boost short-term performance (e.g.\ by meeting earnings benchmarks), then one may predict that increased product market competition reduces earnings management. But an opposing view that competitive pressure induces managerial myopia and hence increases earnings management is also plausible \citep*{kst:2012}. \citet{shleifer:2004} illustrates how ``conduct described as unethical \ldots is sometimes a consequence of market competition'' and gives earnings management as an example: ``in a competitive market,\ldots every firm must itself [manage earnings] or go out of business.''
+\newline
+
+\noindent This paper investigates whether product market competition constrains managers from engaging in overproduction, a type of real activities manipulation, to meet or beat an earnings benchmark (zero earnings or last year's earnings). In line with the opposing views on how competition affects agency problems, prior literature offers mixed evidence on the direction of the relationship between product market competition and real activities manipulation (hereafter RM). \citet{zang:2012} shows that managers choose the level of RM based on the costs of doing so before the fiscal year ends. She provides evidence that a cost associated with RM is market leader status, where firms with lower market shares (i.e.\ face more intense competition in their industries) engage in less RM. \citet{kst:2012} show the opposite: there is more RM in industries with greater market size and lower entry costs (both denoting greater competition). The prior literature suggests at minimum that the relationship between competition and RM is sensitive to how competition is measured.
+\newline
+
+%Prior literature offers mixed evidence on the direction of the relationship between product market competition and earnings management. \citet{bc:2012} show that increased product market competition constrains earnings management. \citet*{kst:2012} provide opposing evidence: increased product market competition is associated with greater earnings management. I focus on real activities manipulation because \citet{defond:2010} suggests that it is an area that ``seems relatively under-researched'' and because I use a quasi-natural experimental setting especially suited to the question.
+
+%\noindent My primary motivation is to explore the role of product market competition in determining how a firm changes its operating practices to affect financial reporting outcomes. \citet{zang:2012} shows that managers choose the level of real activities manipulation based on the costs of doing so before the fiscal year ends. She provides evidence that a cost associated with real activities manipulation is market leader status, where firms with lower market shares engage in less real activities manipulation.\newline
+
+\noindent I attempt to refine the evidence by employing a difference-in-difference-in-differences (DDD) analysis to estimate the causal effect of competition on managers' engaging in overproduction to meet or beat earnings benchmarks. I focus on overproduction because I use international trade data that is limited to manufacturing industries, and \citet{roychowdhury:2006} shows that overproduction as an earnings management strategy only applies to manufacturing firms. Using import tariff rate reductions to measure exogenous variation in a firm's competitive environment \citep{valta:2012}, I find that on average within firms before a tariff rate reduction, there is evidence that firms engage in overproduction to meet or beat earnings. But after a tariff rate reduction, there is no evidence that firms engage in overproduction to avoid reporting an annual loss or a decrease from last year's earnings. %Results are similar in sign but insignificant when I use abnormal R\&D expense to measure real activities manipulation.
+\newline
+
+\noindent My research design differs from those used in related papers. \citet{bc:2012} also use import tariff reductions as exogenous variation in competitive intensity. However, they average each firms' variable each year by industry to form industry-year variables. Similarly, \citet{kst:2012} compute average values for all their variables for each firm over their sample period such that their data is at the firm level. By conducting my analysis at the firm-year level, I am able to control for unobserved time-invariant firm-specific heterogeneity with firm fixed effects as well as unobserved firm-invariant time-specific heterogeneity with year fixed effects.
+\newline
+
+\noindent In addition, my research design employs multiple treatments staggered across time. \citet{kst:2012} conduct a difference-in-difference analysis using one treatment industry (telecommunications) in one year (1996), with firms in all other industries taken as the control group. Although their treatment does not affect all firms during the same time period, the treatment occurs in one time period and hence their research design is susceptible to the criticism that developments concurrent to their treatment may have affected changes in earnings management \citep*{cdl:2008}. While my approach does not completely address that criticism, the staggered nature of the tariff rate reductions through time minimizes concerns that identification is driven by a time-specific event \citep{valta:2012}.
+\newline
+
+\noindent I contribute to the literature in several ways. \citet*[p. 386]{dgs:2010} note the paucity of papers investigating ``macroeconomic conditions as a determinant of earnings quality.'' In his discussion to \citeauthor{dgs:2010}, \citet{defond:2010} suggests that RM is an area of the earnings quality literature that ``seems relatively under-researched'' compared to that of accruals-based earnings management. I address the calls of both papers for more research on these topics by showing that the lessening of trade barriers through import tariff reductions constrains managers from engaging in overproduction to meet or beat earnings benchmarks.
+%I I contribute to the literature by providing evidence on how macroeconomic conditions affect earnings quality, an understudied part of the earnings quality literature \citep*{dgs:2010}. I focus on real activities manipulation because \citet{defond:2010} suggests that it is an area that ``seems relatively under-researched'' and because I use a quasi-natural experimental setting especially suited to the question.
+\newline
+
+\noindent Section \ref{hypothesis} develops the hypothesis. Section \ref{researchdesign} describes the research design and variable measurement. Section \ref{results} report my empirical results. Section \ref{conclusion} concludes.
+
+\section{Hypothesis Development}\label{hypothesis}
+%\noindent The notion that competitive pressures limit agency problems and result in higher efficiency is widespread \citep{bd:2004}. For example, \citet{gm:2011} write, ``economists often argue that managers of firms in competitive industries have strong incentives to reduce slack and maximize profits, or else the firm will go out of business.'' If one takes the view that earnings management is a myopic choice undertaken to boost short-term performance, then one may predict that increased product market competition reduces earnings management.\newline
+
+%\noindent But an opposing view that competitive pressure induces managerial myopia and hence increases earnings management is also plausible \citep{kst:2012}. \citet{shleifer:2004} illustrates how ``conduct described as unethical \ldots is sometimes a consequence of market competition.'' Essentially, competition can lead to the spread of certain ``unethical'' practices among competitors if refusing to undertake the practice would result in a competitive disadvantage.\newline
+
+%Under the assumptions that holding costs constant, increases in competition increase the probability of firm liquidation and reduce expected firm value, \citet{schmidt:1997} shows that the effect of an increase in competition on the agent's effort choice to reduce costs is unclear. It depends on a positive ``threat-of-liquidation effect,'' which induces the agent to work harder for a given contract, and an ambiguous-in-sign ``value-of-cost-reduction effect,'' which changes the contract the principal offers the agent \citep{bd:2004}. Although the ``value-of-cost-reduction effect'' is likely to be positive under an additional assumption that competition is more detrimental to a firm's expected value the less efficient the firm is, its sign could be negative and greater in magnitude than the ``threat-of-liquidation effect,'' implying that an increase in competition decreases the agent's effort choice.
+
+Theory does not provide a clear conclusion for the effect of competition on managerial effort. \citet{raith:2003} shows that how much the principal values the extent to which the agent reduces costs depends on whether market structure is given or endogenous and if it is endogenous, whether increased competition means more substitutable products or lower entry costs. The question of whether competition affects a specific managerial choice, earnings management, must then be answered empirically.
+\newline
+
+\noindent Consistent with the mixed theoretical predictions, the empirical evidence on the direction of the relationship is also mixed. \citet{bc:2012} show that increased product market competition on average reduces the percentage of earnings restatements in an industry and conclude that competition disciplines managers from misreporting accounting information. In addition, \citet{zang:2012} provides evidence that a cost associated with real activities manipulation (RM) is market leader status, where firms that face intense competition in their industries (as measured by market shares) engage in less RM. \citet{kst:2012} show the opposite of both \citeauthor{bc:2012} and \citeauthor{zang:2012}: increased product market competition is associated with greater accruals-based earnings management, RM, and a higher frequency of earnings restatements. \citeauthor{kst:2012} conclude that competition may have negative effects on managers' actions.
+\newline
+
+\noindent Viewed from a different perspective, the results from \citet{bc:2012} and \citet{zang:2012} can also generate the prediction that greater competition reduces RM as a particular earnings management strategy to meet earnings benchmarks. \citeauthor{zang:2012} shows that managers use RM and accrual-based earnings management (hereafter AM) as substitutes for each other; ``when one activity is relatively more costly, firms engage in more of the other.'' If competition reduces the frequency of earnings restatements by industry through constraining AM, then it may be that RM becomes more prevalent following the same competitive shocks.
+\newline
+
+%
+\begin{comment}
+\noindent \textbf{Must explain why you use this.} I follow a recent literature in finance (\citet{fresard:2010}, \citet{valta:2012}) that uses reductions in import tariffs to measure exogenous variation in competitive intensity. I focus on whether product market competition affects managers' engaging in overproduction (a type of real activities manipulation) to avoid missing earnings benchmarks. \citet{bc:2012} use this setting to examine the effect of competition on earnings restatements. %\textbf{This doesn't flow to the next sentence.}
+As the data apply only to manufacturing industries \citet{valta:2012}, and \citet{roychowdhury:2006} shows that overproduction to avoid reporting annual losses is concentrated entirely within manufacturing firms, I believe the setting is a powerful one to investigate the relationship between competition and overproduction to meet earnings benchmarks.
+\newline
+\end{comment}
+%
+
+\noindent Based on mixed theoretical predictions and prior empirical work, I state my hypothesis in null form:
+\begin{quote}
+$\mathbf{H}_{1}$: Product market competition does not affect the relationship between engaging in overproduction and avoiding the reporting of an annual loss (or a decrease from last year's earnings).
+\end{quote}
+
+%
+\begin{comment}
+\noindent \citet{roychowdhury:2006} posits that managers can manage earnings upward by engaging in overproduction. Higher production levels spread fixed overhead costs over a larger number of units, thereby reducing fixed costs per unit. Assuming that marginal cost per unit does not increase, total cost per unit decreases, resulting in lower reported cost of goods sold.
+\newline
+
+\noindent \citet{kst:2012} argue competitive pressure encourages managers to be myopic and engage in short-term actions to improve short-term performance, an example of which is earnings management.
+\newline
+
+I focus on abnormal production costs to measure real activities manipulation. \citet{roychowdhury:2006} shows that the cross-sectional relationship between engaging in overproduction and meeting current year earnings and is entirely concentrated within manufacturing firms. The trade data that I use to investigate the causal effect of competition on real activities manipulation only applies to manufacturing firms \citep{valta:2012}.
+\newline
+\end{comment}
+%
+
+\noindent I focus on overproduction as a specific case of RM because my research design involves a dataset that is limited to manufacturing firms, and \citet{roychowdhury:2006} shows that the cross-sectional relationship between engaging in overproduction and meeting current year earnings is entirely concentrated within manufacturing firms. I describe my research design in the next section.
+
+\section{Research Design}\label{researchdesign}
+%\subsection{Hypothesis 1}
+\subsection{Sample Formation}
+My main data source is Compustat. The sample period is from 1988 to 2005. I follow \citet{gunny:2010} and exclude firms in the financial (SIC 6000--7000) and utility (SIC 4400--5000) industries. I require nonzero and nonmissing inventory (INVT) and cost of goods sold (COGS) data and nonmissing data for the variables to be used in estimating abnormal production costs. 
+\newline
+
+\noindent The normal level of production cost is estimated using the following model:
+\begin{align}\label{eq:normprod}
+\dfrac{\text{Prod}_{i,j,t}}{\text{AT}_{i,j,t-1}} &= \alpha_{0} + \alpha_{1}\dfrac{1}{\text{AT}_{i,j,t-1}} + \beta_{1}\text{MV}_{i,j,t} + \beta_{2}Q_{i,j,t} + \beta_{3}\dfrac{\text{Internal Funds}_{i,j,t}}{\text{AT}_{i,j,t-1}} \notag \\
+&+ \beta_{4}\dfrac{\text{Sale}_{i,j,t}}{\text{AT}_{i,j,t-1}} + \beta_{5}\dfrac{\Delta\text{Sale}_{i,j,t}}{\text{AT}_{i,j,t-1}} + \beta_{6}\dfrac{\Delta\text{Sale}_{i,j,t-1}}{\text{AT}_{i,j,t-1}} + \varepsilon_{i,j,t}
+\end{align}
+
+\noindent where (Compustat names in parantheses)
+\begin{itemize}
+\item $\text{Prod}_{i,j,t} = \text{Cost of Goods Sold}_{i,j,t} \ (\text{COGS}) + \text{Change in Inventory}_{i,j,t} \  (\text{INVCH})$
+\item $\text{AT}_{i,j,t}$ is total assets (AT)
+\item $\text{MV}_{i,j,t} = \text{Fiscal year end price}_{i,j,t} \ (\text{PRCC}_{F}) \ \times \ \text{Common Shares Outstanding}_{i,j,t} \ (\text{CSHO})$
+\item $Q_{i,j,t} = \dfrac{\text{MV}_{i,j,t} + \text{Preferred Stock}_{i,j,t} \ (\text{PSTK}) + \text{Long-term Debt}_{i,j,t} \ (\text{DLTT})}{\text{AT}_{i,j,t}}$
+\item $\text{Internal Funds}_{i,j,t} = \text{Income Before Extraordinary Items}_{i,j,t} \ (\text{IB}) \ + \ \text{R\&D Expense}_{i,j,t} \ (\text{XRD}) \ + \ \text{Depreciation and Amortization}_{i,j,t} \ (\text{DP})$
+\item $\text{Sale}_{i,j,t}$ is SALE.
+\end{itemize}
+
+\noindent Eqs. \eqref{eq:normprod} is estimated by year and industry (three-digit SIC). I require that the number of firms per industry be greater than or equal to 15. I winsorize all variables at 1 and 99\%. The residuals from Eq. \eqref{eq:normprod} are used to measure abnormal production costs.
+
+\subsection{Real Activities Manipulation and Earnings Benchmarks}
+For comparability with prior research (\citet{roychowdhury:2006}, \citet{gunny:2010}), I replicate the cross-sectional relationship between just meeting zero earnings or last year's earnings and abnormal production costs. I estimate the following equation:
+\begin{equation}\label{eq:csr}
+\text{APC}_{i,j,t} = \gamma_{0} + \gamma_{1}\text{Bench}_{i,j,t} + \gamma_{2}\text{Size}_{i,j,t} + \gamma_{3}\text{MTB}_{i,j,t} + \gamma_{4}\text{ROA}_{i,j,t} + \varepsilon_{i,j,t}
+\end{equation}
+
+\noindent where (Compustat variable names in parantheses)
+\begin{itemize}
+\item the dependent variable is the residuals from Eq. \eqref{eq:normprod};
+\item $\text{Bench}_{i,j,t}$ is an indicator variable equal to one if
+\begin{enumerate}
+\item net income (NI) divided by total assets is between 0 and 0.01 (inclusive), or
+\item the change in net income divided by total assets is between 0 and 0.01 (inclusive)
+\end{enumerate}
+
+and zero otherwise;
+
+\item $\text{Size}_{i,j,t} = \log(\text{AT}_{i,j,t})$;
+\item $\text{MTB}_{i,j,t} = \dfrac{\text{MV}_{i,j,t}}{\text{Book value of equity (CEQ)}_{i,j,t}}$; and
+\item $\text{ROA}_{i,j,t} = \dfrac{\text{Income before extraordinary items (IB)}_{i,j,t}}{\text{AT}_{i,j,t-1}}$
+\end{itemize}
+
+\noindent All variables are winsorized at 1 and 99\%. Standard errors are clustered by firm.
+
+\subsection{The effect of competition on engaging in real activities manipulation to meet earnings benchmarks}
+As discussed in the hypothesis development, the prior literature offers mixed evidence on the direction of the relationship between competition and RM. This may be because product market competition is endogenous. Firms can affect the intensity of competition they face from rival firms \citep{valta:2012}, and industry structure and earnings management may be jointly determined \citep{bw:2010}.
+\newline
+
+\noindent Another reason is that results seem sensitive to how competition is measured. \citet{zang:2012} uses lagged market shares and shows that firms with smaller market shares (i.e.\ in more competitive industries) engage in less RM. \citet{kst:2012} use three measures of competition: the industry-level price-cost margin; the natural logarithm of industry sales, a measure of market size; and the natural logarithm of the market share-weighted industry average of gross property, plant, and equipment, a measure of entry costs. The coefficients on market size and entry costs are consistent with more competitive industries being associated with more RM. However, the coefficient on the price-cost margin is insignificant in three out of six specifications. Moreover, though \citeauthor{kst:2012} do not consider the Herfindahl-Hirschman Index (HHI) as a separate measure of competition, it is nonetheless widely used in the finance literature to measure competition (e.g.\ \citet{hr:2006}, \citet{gm:2010,gm:2011}), and its sign is consistently positive and significant, suggesting that all else equal, firms in more competitive industries engage in less RM.
+\newline
+
+\noindent To address concerns of endogeneity, I follow a recent literature in finance (\citet{fresard:2010}, \citet{valta:2012}) that uses reductions in import tariffs to measure exogenous variation in competitive intensity. %I follow \citet{valta:2012} use large reductions of import tariff rates as an exogenous shock to the competitive environment.
+The idea is that lower trade barriers result in a significant increase in competition from foreign competitors. \citet*{bjs:2006} provide evidence suggesting that as trade costs decrease, manufacturing plants are more likely to shut down, non-exporting firms are more likely to begin exporting, and existing exporters export more. As the treatments, described below, are created by the researcher, the setting is not a ``true'' natural experiment. Nonetheless, in an appendix, \citeauthor{valta:2012} shows that firms did not change their financing policies in anticipation of tariff rate reductions, lending credence to the setting as a quasi-natural experiment.
+\newline
+
+\noindent The trade data are provided on Peter Schott's web site\footnote{\url{http://faculty.som.yale.edu/peterschott/sub_international.htm}} and are described in \citet{schott:2010}. The data cover all of my sample period from 1988 to 2005, and the observations are at the country-industry-year level. I collapse the data to industry-years to compute the ad valorem tariff rate as the sum of duties charged divided by the dutiable import value:
+\[\text{Ad Valorem Tariff Rate}_{j,t} = \dfrac{\sum_{k=1}^{N_{j}}\text{Duties}_{k,j,t}}{\sum_{k=1}^{N_{j}}\text{Dutiable Import Value}_{k,j,t}}\]
+
+\noindent where $k$ indexes countries, $j$ indexes industries, and $t$ indexes time. I then compute the change in the ad valorem tariff rate for each industry-year. Next, I compute the median tariff rate change by industry. Following \citet{valta:2012}, an industry-year has a ``competitive shock'' if the absolute value of the largest tariff rate \textit{reduction} is greater than three times the absolute value of the median tariff rate change for that industry. Industries that experience competitive shocks are said to be treated. I exclude tariff rate reductions that preceded and followed by equivalently large \textit{increases} in tariff rates.
+\newline
+
+\noindent From these calculations, I define for each industry the indicator variable $\text{Post-reduction}_{j,t}$, which equals one if the tariff rate reduction has occurred in industry $j$ by time $t$. I identify 34 large tariff rate reductions in 34 three-digit SIC code industries between 1988 and 2005. Eight industries never experience a large tariff rate reduction. Figure \ref{fig:distribution} shows how these reductions are distributed over the sample period.
+\newline
+
+\noindent I estimate the following difference-in-difference-in-differences (DDD) specification:
+\begin{align}\label{eq:ddd}
+\text{APC}_{i,j,t} &= \alpha_{i} + \eta_{t} + \gamma_{1}\text{Bench}_{i,j,t} + \gamma_{2}\text{Post-reduction}_{j,t} + \gamma_{3}\text{Bench}_{i,j,t}\times\text{Post-reduction}_{j,t} \notag \\
+&+ \gamma_{4}\text{Size}_{i,j,t} + \gamma_{5}\text{MTB}_{i,j,t} + \gamma_{6}\text{ROA}_{i,j,t} + \varepsilon_{i,j,t}
+\end{align}
+
+\noindent where $\alpha_{i}$ are firm fixed effects; $\eta_{t}$ are year fixed effects; $\text{Post-reduction}_{j,t}$ is an indicator variable equal to 1 if industry $j$ has been treated by year $t$, and zero otherwise; $\text{Bench}_{i,j,t} \times \text{Post-reduction}_{j,t}$ is the interaction between $\text{Bench}_{i,j,t}$ and $\text{Post-reduction}_{j,t}$; and the remaining variables are as defined in Eq. \eqref{eq:csr}. \noindent Since the intervention affects firms at the three-digit SIC industry level, I cluster standard errors at the three-digit SIC industry level \citep*{bdm:2004} in Eq. \eqref{eq:ddd}.
+\newline
+
+\noindent Prior literature (\citet{roychowdhury:2006}, \citet{gunny:2010}) predicts that $\gamma_{1} > 0$; all else equal, on average within firms, suspect firm-years exhibit higher abnormal production costs than non-suspect firm-years. Prior literature offers mixed predictions on the sign of $\gamma_{3}$. \citet{bc:2012} (\citet{kst:2012}) hypothesize that competition disciplines managers (exacerbates myopic behavior), which would imply $\gamma_{3} < 0 \ (> 0)$; that is, all else equal, on average within firms after a competitive shock, suspect firm-years exhibit lower (even higher) abnormal production costs than suspect firm-years before a competitive shock.
+\newline
+
+\noindent I use a DDD specification instead of the following difference-in-differences (DD) specification
+\begin{align}\label{eq:dd}
+y_{i,j,t} &= \alpha_{i} + \eta_{t} + \gamma_{1}\text{Post-reduction}_{j,t} + \gamma_{2}\text{Size}_{i,j,t} + \gamma_{3}\text{MTB}_{i,j,t} + \gamma_{4}\text{ROA}_{i,j,t} + \varepsilon_{i,j,t}
+\end{align}
+
+\noindent because \citet{roychowdhury:2006} defines real activities manipulation as a departure from normal business practices with the primary objective of meeting an \textit{earnings target}. Eq. \eqref{eq:dd} does not contain any variable representing an earnings target.
+\newline
+
+\noindent The coefficient of interest in Eq. \eqref{eq:ddd} is $\gamma_{3}$. I illustrate how $\widehat{\gamma}_{3}$ is the difference-in-difference-in-differences estimate in the Appendix.
+
+%
+\begin{comment}
+My research design differs from those used in related papers. \citet{bc:2012} also use import tariff reductions as exogenous variation in competitive intensity. However, they average each firms' variable each year to form industry-year variables. Similarly, \citet{kst:2012} compute average values for all their variables for each firm over their sample period such that their data is at the firm level. By conducting my analysis at the firm-year level, I am able to control for unobserved time-invariant firm-specific heterogeneity with firm fixed effects as well as unobserved firm-invariant time-specific heterogeneity with year fixed effects.
+\newline
+
+\noindent In addition, my research design employs multiple treatments staggered across time. \citet{kst:2012} conduct a difference-in-difference analysis using one treatment industry (telecommunications) in one year (1996), with firms in all other industries taken as the control group. Although their treatment does not affect all firms during the same time period, the treatment occurs in one time period and hence their research design is susceptible to the criticism that developments concurrent to their treatment may have affected changes in earnings management (cf.\ \citet*{cdl:2008}). While my approach does not completely address that criticism, the staggered nature of the tariff rate reductions through time minimizes concerns that identification is driven by a time-specific event that occurred in a given year.
+\end{comment}
+%
+
+\noindent My research design differs from those used in related papers in several ways. First, my approach employs and accounts for the staggering of tariff rate reductions over time. In addition, it does not restrict the control group to be firms in the eight industries that never experience a large tariff rate reduction. All firms in industries that are not treated at time $t$ are implicitly taken as the control group, even if they have already been treated or will be treated at a later time (cf.\ \citet{bm:2003}). In contrast, while \citet{kst:2012} conduct a difference-in-difference analysis to support their results, their approach uses one treatment industry (telecommunications) in one year (1996), with firms in all other industries taken as the control group. Their research design is thus susceptible to the criticism that developments concurrent to their treatment may have affected changes in earnings management \citep{cdl:2008}. While my approach does not fully address that criticism, the staggered nature of the tariff rate reductions through time minimizes concerns that identification is driven by a time-specific event \citep{valta:2012}.
+\newline
+
+\noindent Second, my observations are at the firm-year level. \citet{bc:2012} also use import tariff reductions as exogenous variation in competitive intensity. However, they average each firms' variable each year by industry to form industry-year variables. Similarly, \citet{kst:2012} compute average values for all their variables for each firm over their sample period such that their data is at the firm level. By conducting my analysis at the firm-year level, I am able to control for unobserved time-invariant firm-specific heterogeneity with firm fixed effects as well as unobserved firm-invariant time-specific heterogeneity with year fixed effects.
+
+\section{Results}\label{results}
+\subsection{Main Results}
+\noindent Table \ref{table:descriptivesprod}, Panel A presents descriptive statistics for the full sample. Though I include an intercept in Eq. \eqref{eq:normprod}, I also winsorize the residuals from Eq. \eqref{eq:normprod} at 1 and 99\%, which results in the mean of the residuals deviating from zero. Roughly 12\% of the observations are suspect firm years.
+\newline
+
+\noindent Column 1 in Table \ref{table:prod} presents the results of estimating Eq. \eqref{eq:csr} and shows that $\gamma_{1}$ is positive (negative) and significant at the 1\% level. The coefficients are consistent with ``suspect firm-years (i.e.\ $\text{Bench}_{i,j,t} = 1$) exhibiting unusually high production costs'' \citep{roychowdhury:2006}. As an intermediate step leading to the DDD results, I include firm and year fixed effects in \eqref{eq:csr}. Column 2 in Table \ref{table:prod} shows that the relationship between overproducing and meeting earnings benchmarks holds within firms.
+%Consistent with \citet{gunny:2010}, $\gamma_{1}$ for Eq. \eqref{eq:csr} with abnormal R\&D expense as the dependent variable is smaller by an order of magnitude than $\gamma_{1}$ for Eq. \eqref{eq:csr} with abnormal production as the dependent variable.
+\newline
+
+\noindent \citet{valta:2012} notes that the U.S. import data of \citet{schott:2010} only exist for manufacturing industries. Before presenting the results from estimating Eq. \eqref{eq:ddd}, I provide descriptive statistics and re-estimate Eq. \eqref{eq:csr} using the trade subsample. Table \ref{table:descriptivesprod}, Panel B shows that the trade subsample is similar to the full sample. In addition, columns 1 and 2 of Table \ref{table:prod} show that the corresponding results from Table \ref{table:prod} remain unchanged qualitatively.
+\newline
+
+\noindent Column 3 of Table \ref{table:prod} shows my main result. $\widehat{\gamma}_{3}$, the coefficient on $\text{Bench}_{i,j,t}\times\text{Post-reduction}_{j,t}$, is negative and significant at the 5\% level, suggesting that on average, treated firms reduce overproduction relative to control firms. The magnitude of $\widehat{\gamma}_{3}$ indicates the possibility that the reduction is so large that there is no evidence that managers engage in overproduction to meet or beat earnings benchmarks in the period following the competitive shock. An $F$-test of $[(\widehat{\gamma}_{1} + \widehat{\gamma}_{3}) = 0]$ confirms this; the $p$-value is 0.5128.
+
+\subsection{Robustness}
+\subsubsection{Abnormal R\&D}
+I repeat the analysis with abnormal R\&D expense measuring RM. An advantage of using abnormal R\&D expense is that it allows me to rule out the possibility that that my research design is biased toward finding a negative $\widehat{\gamma}_{3}$. Whereas overproduction to manage earnings involves producing more than expected relative to a model, reducing R\&D involves spending less on R\&D than expected relative to a model \citep{roychowdhury:2006}. That is, I should expect $\widehat{\gamma}_{3}$ when using abnormal R\&D expense to measure RM to have the opposite sign of the corresponding coefficient when using abnormal production to measure RM.
+\newline
+
+\noindent The data are obtained from the same sources as mentioned in Section \ref{researchdesign}. I require nonzero and nonmissing R\&D expense (XRD) and nonmissing data for the variables to be used in estimating abnormal R\&D expense.
+\newline
+
+\noindent The normal level of R\&D expense is estimated using the following model:
+\begin{equation}\label{eq:normrd}
+\dfrac{\text{R\&D}_{i,j,t}}{\text{AT}_{i,j,t-1}} = \alpha_{0} + \alpha_{1}\dfrac{1}{\text{AT}_{i,j,t-1}} + \beta_{1}\text{MV}_{i,j,t} + \beta_{2}Q_{i,j,t} + \beta_{3}\dfrac{\text{Internal Funds}_{i,j,t}}{\text{AT}_{i,j,t-1}} + \beta_{4}\dfrac{\text{R\&D}_{i,j,t-1}}{\text{AT}_{i,j,t-1}} + \varepsilon_{i,j,t}
+\end{equation}
+
+\noindent where (Compustat names in parantheses)
+\begin{itemize}
+\item $\text{R\&D}_{i,j,t} = \text{R\&D Expense}_{i,j,t} \ (\text{XRD})$
+\item $\text{AT}_{i,j,t}$ is total assets (AT)
+\item $\text{MV}_{i,j,t} = \text{Fiscal year end price}_{i,j,t} \ (\text{PRCC}_{F}) \ \times \ \text{Common Shares Outstanding}_{i,j,t} \ (\text{CSHO})$
+\item $Q_{i,j,t} = \dfrac{\text{MV}_{i,j,t} + \text{Preferred Stock}_{i,j,t} \ (\text{PSTK}) + \text{Long-term Debt}_{i,j,t} \ (\text{DLTT})}{\text{AT}_{i,j,t}}$
+\item $\text{Internal Funds}_{i,j,t} = \text{Income Before Extraordinary Items}_{i,j,t} \ (\text{IB}) \ + \ \text{R\&D Expense}_{i,j,t} \ (\text{XRD}) \ + \ \text{Depreciation and Amortization}_{i,j,t} \ (\text{DP})$
+\end{itemize}
+
+\noindent I present descriptive statistics for the full sample and the trade subsample in Table \ref{table:descriptivesrd}, Panels A and B. Column 1 in Table \ref{table:rd} shows that $\gamma_{1}$ is negative and significant at the 1\% level, consistent with suspect firm-years exhibiting unusually low R\&D expense \citep{roychowdhury:2006}. The value of the coefficient is smaller by an order of magnitude compared to that from using abnormal production as the dependent variable, consistent with \citet{gunny:2010}. Column 2 in Table \ref{table:rd} shows that the relationship between cutting R\&D expense and meeting earnings benchmarks holds within firms. The results are again qualitatively similar for the trade subsample in Table \ref{table:rd}.
+\newline
+
+\noindent Column 3 in Table \ref{table:rd} shows that while $\widehat{\gamma}_{3} > 0$, I fail to reject the null hypothesis that $\gamma_{3} = 0$. The results are thus consistent in sign with those from using abnormal production to measure RM but not in significance.
+
+\subsubsection{Separating earnings targets}
+I re-estimate Eq. \eqref{eq:ddd} by splitting $\text{Bench}_{i,j,t}$ into $\text{Bench Zero}_{i,j,t}$ and $\text{Bench Last}_{i,j,t}$ to separate the zero earnings and last year's earnings benchmarks. The signs on $\widehat{\gamma}_{1}$ and $\widehat{\gamma}_{3}$ across all columns are consistent with product market competition constraining managers from engaging in overproduction (cutting R\&D expense) to meet earnings benchmarks, though the results in table \ref{table:prod} appears to be driven by meeting or beating last year's earnings, and evidence that product market competition constrains managers from cutting R\&D is strongest for meeting or beating zero earnings.
+
+\subsubsection{Accruals-based Earnings Management}
+Accruals-based earnings management (hereafter AM) provides another test of the competing hypotheses regarding the effect of competition on earnings management to meet or beat earnings benchmarks. In addition, the literature documenting substitution between RM and AM (\citet{zang:2012}, \citet{io:2013b}) also predicts that if RM becomes more costly with increased competition, we should expect to see more AM instead.
+\newline
+
+\noindent I construct discretionary accruals following \citet{io:2013}. I first run the following cross-sectional regression for each three-digit SIC industry and year:
+\[\dfrac{\text{Total Accruals}_{i,j,t}}{\text{AT}_{i,j,t-1}} = b_{1}\dfrac{1}{\text{AT}_{i,j,t-1}} + b_{2}\dfrac{\Delta\text{Sale}_{i,j,t}}{\text{AT}_{i,j,t-1}} + b_{3}\dfrac{\text{PPEGT}_{i,j,t}}{\text{AT}_{i,j,t-1}} + \varepsilon_{i,j,t}\]
+
+\noindent where $\text{Total Accruals}_{i,j,t}$ equals $\text{Net Income}_{i,j,t} \ (\text{NI}) \ + \text{Cash Flow from Operations}_{i,j,t} \ (\text{OANCF})$; AT is total assets; and PPEGT is gross property, plant, and equipment. The coefficient estimates are then used to compute normal accruals:
+\[\dfrac{\text{Normal Accruals}_{i,j,t}}{\text{AT}_{i,j,t-1}} = \widehat{b}_{1}\dfrac{1}{\text{AT}_{i,j,t-1}} + \widehat{b}_{2}\dfrac{\Delta{\text{Sale}}_{i,j,t} - \Delta\text{AR}_{i,j,t}}{\text{AT}_{i,j,t-1}} + \widehat{b}_{3}\dfrac{\text{PPEGT}_{i,j,t}}{\text{AT}_{i,j,t-1}}\]
+
+\noindent Discretionary accruals (DAcc) are defined as the difference between total and normal accruals, scaled by lagged total assets:
+\[\text{DAcc}_{i,j,t} = \dfrac{\text{Total Accruals}_{i,j,t} - \text{Normal Accruals}_{i,j,t}}{\text{AT}_{i,j,t-1}}\]
+%
+\begin{comment}
+\noindent Table \ref{table:descriptivesrd}, Panel A presents descriptive statistics for the full abnormal R\&D sample. Roughly 9\% of the observations are suspect firm years. Column 1 in Table \ref{table:csrrd} presents the results of estimating Eq. \eqref{eq:csr} with abnormal R\&D as the dependent variable and shows that $\gamma_{1}$ is negative and significant at the 1\% level, consistent with suspect firm-years exhibiting unusually low R\&D expense \citep{roychowdhury:2006}. The value of the coefficient is smaller by an order of magnitude compared to that from using abnormal production as the dependent variable, consistent with \citet{gunny:2010}. Column 2 in Table \ref{table:csrrd} shows that the relationship between cutting R\&D expense and meeting earnings benchmarks holds within firms.
+%Consistent with \citet{gunny:2010}, $\gamma_{1}$ for Eq. \eqref{eq:csr} with abnormal R\&D expense as the dependent variable is smaller by an order of magnitude than $\gamma_{1}$ for Eq. \eqref{eq:csr} with abnormal production as the dependent variable.
+\newline
+
+\noindent \citet{valta:2012} notes that the U.S. import data of \citet{schott:2010} only exist for manufacturing industries. Before presenting the results from estimating Eq. \eqref{eq:ddd}, I provide descriptive statistics and re-estimate Eq. \eqref{eq:csr} using the trade subsample. Table \ref{table:descriptivesprod}, Panel B shows that the trade subsample is similar to the full sample. In addition, columns 1 and 2 of Table \ref{table:csrprodpostred} show that the corresponding results from Table \ref{table:csrprod} remain unchanged qualitatively.
+\newline
+
+\noindent Column 3 of Table \ref{table:csrprodpostred} shows my main result. $\widehat{\gamma}_{3}$, the coefficient on $\text{Bench}_{i,j,t}\times\text{Post-reduction}_{j,t}$, is negative and significant at the 5\% level, suggesting that on average, treated firms reduce overproduction relative to control firms. The magnitude of $\widehat{\gamma}_{3}$ indicates the possibility that the reduction is so large that there is no evidence that managers engage in overproduction to meet or beat earnings benchmarks in the period following the competitive shock. An $F$-test of $[(\widehat{\gamma}_{1} + \widehat{\gamma}_{3}) = 0]$ confirms this; the $p$-value is 0.5128.
+\end{comment}
+%
+
+\noindent Table \ref{table:daccpostred} presents the results of estimating Eqs. \eqref{eq:csr} and \eqref{eq:ddd} with DAcc as the dependent variable. Consistent with prior literature, $\gamma_{1}$ is positive. $\gamma_{3}$ is negative in sign but both statistically and economically insignificant. At minimum, the evidence does not support the managerial myopia hypothesis.
+
+%
+\begin{comment}
+\section{TO BE MERGED IN A PREVIOUS SECTION}
+``If managers use real activities manipulation and accrual-based earnings management as substitutes for each other \ldots when one activity is relatively more costly, firms engage in more of the other'' \citep{zang:2012}. ``The pre-SOX period was characterized by increasing accrual-based earnings management \ldots but declining real earnings management. Following the passage of SOX, accrual-based earnings management declined significantly, while real earnings management increased significantly'' \citep{cdl:2008}.
+\end{comment}
+%
+
+\section{Conclusion}\label{conclusion}
+I examine how changes in industry competition affect real activities manipulation (RM) in the form of overproduction. I use large tariff rate reductions at the three-digit SIC code industry level as a source of exogenous variation in industry competitive intensity. Using a difference-in-difference-in-differences methodology, I demonstrate that treated firms reduce overproduction after treatment such that on average within firms in the period following a competitive shock, there is no evidence of overproduction to meet or beat earnings benchmarks (zero earnings or last year's earnings). Results with abnormal R\&D expense as a measure of RM are consistent in sign but insignificant.
+\newline
+
+\noindent My study contributes to the existing literature by furthering our understanding of factors that affect the extent of RM. I show that product market competition constrains managers from engaging in overproduction to meet or beat earnings benchmarks. Consistent with \citet{bc:2012}, my results suggest that competition disciplines managers as opposed to exacerbating managerial myopia. In addition, by showing that the lessening of trade barriers through import tariff reductions reduces overproduction, I provide evidence on the role of macroeconomic conditions as a determinant of earnings quality.
+\newpage
+
+\appendix\section{Proof that $\widehat{\gamma}_{3}$ is the DDD estimate}
+To see that $\widehat{\gamma}_{3}$ is the DDD estimate, I first use the Frisch-Waugh-Lovell Theorem \citep{greene:2008} to partial out the control variables because when a model includes additional covariates beyond indicator variables for treatment and pre / post status, the coefficient of interest cannot be expressed as a ``simple'' difference of differences \citep{wooldridge:2010}
+\[y_{i,j,t}^{*} = \alpha_{i}^{*} + \eta_{t}^{*} + \gamma_{1}\text{Bench}_{i,j,t}^{*} + \gamma_{2}\text{Post-reduction}_{j,t}^{*} + \gamma_{3}\text{Bench}_{i,j,t}^{*}\times\text{Post-reduction}_{j,t}^{*} + \varepsilon_{i,j,t}\]
+
+\noindent where the asterisk denotes the partialled out variable. Let $i$ denote the $i$th treated firm in industry $j$, $t \ge a $ denote the time periods after treatment, $t \le b$ denote the time periods before treatment, and $i'$ denote all firms in industry $j' \ne j$ that were not treated at $t=a$. Algebraic manipulation completes the illustration.
+\begin{align*}
+\widehat{\gamma}_{3} &= \{[(\alpha_{i}^{*} + \eta_{a}^{*} + \gamma_{1} + \gamma_{2} + \gamma_{3}) - (\alpha_{i}^{*} + \eta_{b}^{*} + \gamma_{1})] - [(\alpha_{i'}^{*} + \eta_{a}^{*} + \gamma_{1}) - (\alpha_{i'}^{*} + \eta_{b}^{*} + \gamma_{1})]\} \\
+&- \{[(\alpha_{i}^{*} + \eta_{a}^{*} + \gamma_{2}) - (\alpha_{i}^{*} + \eta_{b}^{*})] - [(\alpha_{i'}^{*} + \eta_{a}^{*}) - (\alpha_{i'}^{*} + \eta_{b}^{*})]\} \\
+&= \underbrace{\{[\overline{y}_{\text{Post}_{j,a}=1, \text{Bench}_{i,j,a}=1} - \overline{y}_{\text{Post}_{j,b}=0, \text{Bench}_{i,j,b}=1}] - [\overline{y}_{\text{Post}_{j,a}=1, \text{Bench}_{i',j',a}=1} - \overline{y}_{\text{Post}_{j,b}=0, \text{Bench}_{i',j',b}=1}]\}}_{\text{Pre / post difference in average RM for treated firms less pre / post difference in average RM for control firms, suspect years}} \\
+&- \underbrace{\{[\overline{y}_{\text{Post}_{j,a}=1, \text{Bench}_{i,j,a}=0} - \overline{y}_{\text{Post}_{j,b}=0, \text{Bench}_{i,j,b}=0}] - [\overline{y}_{\text{Post}_{j,a}=1, \text{Bench}_{i',j',a}=0} - \overline{y}_{\text{Post}_{j,b}=0, \text{Bench}_{i',j',b}=0}]\}}_{\text{Pre / post difference in average RM for treated firms less pre / post difference in average RM for control firms, non-suspect years}}
+\end{align*}
+\newpage
+
+\bibliography{master}
+\bibliographystyle{abbrvnat}
+\newpage
+\begin{figure}[htbp]
+	\centering
+		\includegraphics[scale=1]{fig1.eps}
+	\caption{This figure shows the number of tariff rate reductions for each year during the sample period 1988--2005 for the merged trade and abnormal production subsample. Tariff rates are computed at the three-digit SIC code industry level as duties collected divided by the dutiable value of imports. An industry experiences a tariff rate reduction if the absolute value of the reduction is at least three times larger than the absolute value of the median tariff rate change in that industry.}
+	\label{fig:distribution}
+\end{figure}
+
+\begin{table}\centering
+\caption{Descriptive Statistics}
+%\textbf{Panel A: Full Sample}
+%\estwide{descriptivesprodmain2.tex}{5}{c}
+%\textbf{Panel B: Trade Subsample}
+\textbf{Panel A: Abnormal Production sample}
+\estwide{descriptivesprodtrade2.tex}{5}{c}
+\textbf{Panel B: Abnormal R\&D sample}
+\estwide{descriptivesrdtrade2.tex}{5}{c}
+\label{table:descriptivesrd}
+\end{table}
+
+%
+\begin{comment}
+\begin{table}
+\caption{The relationship between real activities manipulation and firms' just meeting zero earnings or last year's earnings}\centering
+%\textbf{Panel A: Abnormal Production Costs}
+\estauto{csrprod2}{2}{c}
+%\newline
+%\textbf{Panel B: Abnormal R\&D Expense}
+%\estauto{csrrd2}{2}{c}
+\starnote
+\fignote{In both panels, column 1 presents coefficient estimates of OLS regressions which compare firm-years that just met zero earnings or last year's earnings with other firm-years, and column 2 contains firm and year fixed effects such that the comparison is within-firms. The sample period is from 1988 to 2005. All variables are defined in the text. Standard errors are clustered by firm.}
+\label{table:csrprod}
+\end{table}
+\end{comment}
+%
+
+\begin{table}
+\caption{The effect of competition on overproducing to meet or beat earnings benchmarks}\centering
+%\textbf{Panel A: Abnormal Production Costs}
+\estauto{csrprodpostred2}{3}{c}
+%\newline
+%\textbf{Panel B: Abnormal R\&D Expense}
+%\estauto{csrrdpostred2}{3}{c}
+\starnote
+\fignote{Column 1 presents coefficient estimates of OLS regressions which compare firm-years that just met zero earnings or last year's earnings with other firm-years, and column 2 contains firm and year fixed effects such that the comparison is within-firms. Column 3 presents the difference-in-difference-in-differences (DDD) results of estimating the effect of a competitive shock on overproduction to meet or beat an earnings benchmark (zero earnings or last year's earnings). The sample period is from 1988 to 2005. All variables are defined in the text. Standard errors are clustered by firm in columns 1 and 2 and by industry (three-digit SIC) in column 3.}
+\label{table:prod}
+\end{table}
+
+%
+\begin{comment}
+\begin{table}
+\caption{The relationship between real activities manipulation and firms' just meeting zero earnings or last year's earnings}\centering
+%\textbf{Panel A: Abnormal Production Costs}
+%\estauto{csrprod2}{2}{c}
+%\newline
+%\textbf{Panel B: Abnormal R\&D Expense}
+\estauto{csrrd2}{2}{c}
+\starnote
+\fignote{In both panels, column 1 presents coefficient estimates of OLS regressions which compare firm-years that just met zero earnings or last year's earnings with other firm-years, and column 2 contains firm and year fixed effects such that the comparison is within-firms. The sample period is from 1988 to 2005. All variables are defined in the text. Standard errors are clustered by firm.}
+\label{table:csrrd}
+\end{table}
+\end{comment}
+%
+
+\begin{table}
+\caption{The effect of competition on cutting R\&D to meet or beat earnings benchmarks}\centering
+%\textbf{Panel A: Abnormal Production Costs}
+\estauto{csrrdpostred2}{3}{c}
+%\newline
+%\textbf{Panel B: Abnormal R\&D Expense}
+%\estauto{csrrdpostred2}{3}{c}
+\starnote
+\fignote{Column 1 presents coefficient estimates of OLS regressions which compare firm-years that just met zero earnings or last year's earnings with other firm-years, and column 2 contains firm and year fixed effects such that the comparison is within-firms. Column 3 presents the difference-in-difference-in-differences (DDD) results of estimating the effect of a competitive shock on cutting R\&D expense to meet or beat an earnings benchmark (zero earnings or last year's earnings). The sample period is from 1988 to 2005. All variables are defined in the text. Standard errors are clustered by firm in columns 1 and 2 and by industry (three-digit SIC) in column 3.}
+\label{table:rd}
+\end{table}
+
+\begin{table}
+\caption{Separating earnings targets}\centering
+%\textbf{Panel A: Abnormal Production Costs}
+\estauto{splitbench2}{4}{c}
+%\newline
+%\textbf{Panel B: Abnormal R\&D Expense}
+%\estauto{csrrdpostred2}{3}{c}
+\starnote
+\fignote{Columns 1 and 3 (2 and 4) repeat the analyses from tables \ref{table:prod} and \ref{table:rd} when $\text{Bench}_{i,j,t}$ is defined as zero earnings (last year's earnings). The sample period is from 1988 to 2005. All variables are defined in the text. Standard errors are clustered by industry (three-digit SIC) in all columns.}
+\label{table:splitbench}
+\end{table}
+
+\begin{table}
+\caption{The effect of competition on accruals-based earnings management to meet or beat earnings benchmarks}\centering
+%\textbf{Panel A: Abnormal Production Costs}
+\estauto{daccpostred2}{3}{c}
+%\newline
+%\textbf{Panel B: Abnormal R\&D Expense}
+%\estauto{csrrdpostred2}{3}{c}
+\starnote
+\fignote{Column 1 presents coefficient estimates of OLS regressions which compare firm-years that just met zero earnings or last year's earnings with other firm-years, and column 2 contains firm and year fixed effects such that the comparison is within-firms. Column 3 presents the difference-in-difference-in-differences (DDD) results of estimating the effect of a competitive shock on accruals-based earnings management to meet or beat an earnings benchmark (zero earnings or last year's earnings). The sample period is from 1988 to 2005. All variables are defined in the text. Standard errors are clustered by firm in columns 1 and 2 and by industry (three-digit SIC) in column 3.}
+\label{table:daccpostred}
+\end{table}
+
+\begin{table}
+\caption{Bankruptcy risk, overproduction}\centering
+%\textbf{Panel A: Abnormal Production Costs}
+\estauto{zprod2}{2}{c}
+%\newline
+%\textbf{Panel B: Abnormal R\&D Expense}
+%\estauto{csrrdpostred2}{3}{c}
+\starnote
+\fignote{Columns 1 and 2 re-estimate Column 3 of table \ref{table:prod} for observations below and above the median Altman Z-score, respectively. The sample period is from 1988 to 2005. All variables are defined in the text. Standard errors are clustered by industry (three-digit SIC) in all columns.}
+\label{table:zprod}
+\end{table}
+
+\begin{table}
+\caption{Bankruptcy risk, abnormal R\&D}\centering
+%\textbf{Panel A: Abnormal Production Costs}
+\estauto{zrd2}{4}{c}
+%\newline
+%\textbf{Panel B: Abnormal R\&D Expense}
+%\estauto{csrrdpostred2}{3}{c}
+\starnote
+\fignote{Columns 1 and 2 re-estimate Column 3 of table \ref{table:rd} for observations below and above the median Altman Z-score, respectively; and columns 3 and 4 re-estimate column 3 of table \ref{table:splitbench} for observations below and above the median Altman Z-score, respectively. The sample period is from 1988 to 2005. All variables are defined in the text. Standard errors are clustered by industry (three-digit SIC) in all columns.}
+\label{table:zrd}
+\end{table}
+\end{document}
