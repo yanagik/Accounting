@@ -124,6 +124,7 @@ as select a.gvkey,
 		a.fyear,
 		a.xrd,
 		a.at,
+		a.lt,
 		a.prcc_f,
 		a.csho,
 		a.pstk,
@@ -243,7 +244,8 @@ data ardvar;
  size=log(at);
  mtb=mv/ceq;
  roa=ib/lagat;
- zscore=3.3*((oibdp-dp)/at)+(sale/at)+1.4*(re/at)+1.2*(wcap/at);
+ *zscore=3.3*((oibdp-dp)/at)+(sale/at)+1.4*(re/at)+1.2*(wcap/at);*Follows Sufi;
+ zscore=0.3*(ni/at)+(sale/at)+1.4*(re/at)+1.2*(wcap/at)+0.6*(prcc_f*csho)/lt;*Follows Zang;
 run;
 
 *Sort zscore by median;
@@ -290,7 +292,8 @@ data aprodvar;
  size=log(at);
  mtb=mv/ceq;
  roa=ib/lagat;
- zscore=3.3*((oibdp-dp)/at)+(sale/at)+1.4*(re/at)+1.2*(wcap/at);
+ *zscore=3.3*((oibdp-dp)/at)+(sale/at)+1.4*(re/at)+1.2*(wcap/at);*Follows Sufi;
+ zscore=0.3*(ni/at)+(sale/at)+1.4*(re/at)+1.2*(wcap/at)+0.6*(prcc_f*csho)/lt;*Follows Zang;
 run;
 
 *Sort zscore by median;
