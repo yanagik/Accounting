@@ -1,5 +1,5 @@
-libname temp 'C:\Users\Temp\Documents\Fall 2013';
-*libname temp 'D:\ay32\My Documents\Fall 2013';
+*libname temp 'C:\Users\Temp\Documents\Fall 2013';
+libname temp 'D:\ay32\My Documents\Fall 2013';
 
 /**********************************************************************************************/
 /* FILENAME:        Winsorize_Truncate.sas                                                    */
@@ -120,6 +120,7 @@ as select a.ticker,
 		  a.cname,
 		  a.anndats,
 		  a.fpedats,
+		  a.revdats,
 		  a.fpi,
 		  a.estimator,
 		  a.analys,
@@ -141,6 +142,47 @@ data ibes;
  *if cusip=. then delete;
 run;
 
+*Merge recommendations ASAP;
+proc sort data=ibes.recddet out=recsamp 
+          (keep=ticker amaskcd emaskcd estimid anndats revdats itext ireccd);
+  where amaskcd ne 0;
+  by ticker amaskcd anndats revdats;
+run;
+
+*order by ticker, analys, fpedats, fpi, anndats, revdats;
+proc sql;
+  create table final as
+  select ibes.*, recsamp.emaskcd , recsamp.anndats, recsamp.revdats, 
+         recsamp.estimid, recsamp.itext, recsamp.ireccd
+  from ibes as d left join recsamp as r
+  on d.ticker = r.ticker and d.analys = r.amaskcd and 
+     r.anndats <= d.revdats and r.revdats >= d.anndats
+  order by ticker, fpedats, year, analys, anndats, revdats;
+quit;
+
+*Create coverage measure;
+proc sort data=final out=final2; by ticker year analys descending anndats; run;
+
+*My ghetto way of saving the oldest forecast;
+*The dataset is now at the firm-year-analyst level;
+*Note that there may be multiple analysts per firm (year);
+proc sort data=final2 out=final3 nodupkey; by ticker year analys; run;
+
+*Count number of analysts;
+proc summary data=final3;
+ by ticker year;
+ var analys;
+ output out=ibescount (drop=_type_) mean=;
+run;
+
+*Merge count;
+proc sql;
+ create table final4
+ as select a.*, b._freq_ as coverage
+ from final3 a left join ibescount b
+ on (a.ticker=b.ticker) and (a.year = b.year);
+quit;*9,179 firms;
+
 *Create coverage measure;
 proc sort data=ibes out=ibes2; by ticker year analys descending anndats; run;
 
@@ -157,6 +199,7 @@ proc summary data=ibes3;
 run;
 
 *Merge count;
+*Final4 and IBES4 are the same. The former has recommendations while the latter does not;
 proc sql;
  create table ibes4
  as select a.*, b._freq_ as coverage
@@ -241,6 +284,7 @@ run;
 
 *Sort before merge;
 proc sort data=ibes4; by ticker; run;
+proc sort data=final4; by ticker; run;
 proc sort data=link3; by ticker; run;
 
 *Merge IBES/CRSP link table;
@@ -287,7 +331,47 @@ quit;*n=1,488,519;
 *One thing you must note is that firms can be treated multiple times;
 proc sort data=ibescompstat3 out=ibescompstat4 nodupkey; by gvkey year merger; run;
 
-data firstmergeryears;*1984;
+*Repeat for final;
+*Merge IBES/CRSP link table;
+proc sql;
+ create table finalcrsp
+ as select a.*, b.permno
+ from final4 a left join link3 b
+ on (a.ticker=b.ticker);
+quit;*n=1,488,519;
+
+*Then screen;
+data finalcrsp2;
+ set finalcrsp;
+ if permno=. then delete;
+run;
+
+*Merge GVKEY back;
+proc sql;
+ create table finalcompstat
+ as select a.*, b.gvkey
+ from finalcrsp2 a left join crsp.ccmxpf_linktable b
+ on (a.permno=b.lpermno) and (a.fpedats >= b.linkdt) and (a.fpedats <= b.linkenddt);
+quit;*n=1,488,519;
+
+data finalcompstat2;
+ set finalcompstat;
+ if gvkey=. then delete;
+run;
+
+*Merge "merger" identifier to ibescompstat2;
+proc sql;
+ create table finalcompstat3
+ as select a.*, b.merger
+ from finalcompstat2 a left join hkqje b
+ on (a.permno=b.permno);
+quit;*n=1,488,519;
+
+*One thing you must note is that firms can be treated multiple times;
+*finalcompstat4 is ibescompstat4 at a different level of aggregation (firm-analyst-year vs. firm-year);
+proc sort data=finalcompstat3 out=finalcompstat4 nodupkey; by gvkey year analys merger; run;
+
+/*data firstmergeryears;*1984;
  set ibescompstat4;
  if year<1983 then delete;
  else if year=1984 then delete;
@@ -307,7 +391,7 @@ data secondmergeryears;*1988;
  else if year=1987 then post=0;
  if merger=8 then treat=1;
  else treat=0;
-run;
+run;*/
 
 data thirdmergeryears;*1994;
  set ibescompstat4;
@@ -393,7 +477,7 @@ data fifteenthmergeryears;*2005;
 run;
 
 data allobs;
- set firstmergeryears secondmergeryears thirdmergeryears fourthmergeryears sixthmergeryears ninthmergeryears tenthmergeryears fourteenthmergeryears fifteenthmergeryears;
+ set thirdmergeryears fourthmergeryears sixthmergeryears ninthmergeryears tenthmergeryears fourteenthmergeryears fifteenthmergeryears;
 run;
 
 *out=allobs2 nodupkey;
@@ -406,6 +490,362 @@ data ibescov;
  posttreat=post*treat;
  if 1993 le year le 2006;
 run;
+
+*Repeat the process for data with recommendations;
+data thirdmergeryearsrec;*1994;
+ set finalcompstat4;
+ if year<1993 then delete;
+ else if year=1994 then delete;
+ else if year>1995 then delete;
+ if year=1995 then post=1;
+ else if year=1993 then post=0;
+ if merger=2 then treat=1;
+ else treat=0;
+run;
+
+data fourthmergeryearsrec;*And fifth;*1997;
+ set finalcompstat4;
+ if year<1996 then delete;
+ else if year=1997 then delete;
+ else if year>1998 then delete;
+ if year=1998 then post=1;
+ else if year=1996 then post=0;
+ if merger=3 then treat=1;
+ else if merger=4 then treat=1;
+ else treat=0;
+run;
+
+data sixthmergeryearsrec;*And seventh and eighth;*1998;
+ set finalcompstat4;
+ if year<1997 then delete;
+ else if year=1998 then delete;
+ else if year>1999 then delete;
+ if year=1999 then post=1;
+ else if year=1997 then post=0;
+ if merger=8 then treat=1;
+ else if merger=9 then treat=1;
+ else if merger=10 then treat=1;
+ else treat=0;
+run;
+
+data ninthmergeryearsrec;*And seventh and eighth;*1999;
+ set finalcompstat4;
+ if year<1998 then delete;
+ else if year=1999 then delete;
+ else if year>2000 then delete;
+ if year=2000 then post=1;
+ else if year=1998 then post=0;
+ if merger=12 then treat=1;
+ else treat=0;
+run;
+
+data tenthmergeryearsrec;*And eleventh, twelfth, and thirteenth;*2000;
+ set finalcompstat4;
+ if year<1999 then delete;
+ else if year=2000 then delete;
+ else if year>2001 then delete;
+ if year=2001 then post=1;
+ else if year=1999 then post=0;
+ if merger=5 then treat=1;
+ else if merger=6 then treat=1;
+ else if merger=7 then treat=1;
+ else if merger=13 then treat=1;
+ else treat=0;
+run;
+
+data fourteenthmergeryearsrec;*2001;
+ set finalcompstat4;
+ if year<2000 then delete;
+ else if year=2001 then delete;
+ else if year>2002 then delete;
+ if year=2002 then post=1;
+ else if year=2000 then post=0;
+ if merger=14 then treat=1;
+ else treat=0;
+run;
+
+data fifteenthmergeryearsrec;*2005;
+ set finalcompstat4;
+ if year<2004 then delete;
+ else if year=2005 then delete;
+ else if year>2006 then delete;
+ if year=2006 then post=1;
+ else if year=2004 then post=0;
+ if merger=15 then treat=1;
+ else treat=0;
+run;
+
+proc sort data=thirdmergeryearsrec; by gvkey year analys post descending treat; run;
+proc sort data=thirdmergeryearsrec out=thirdmergeryearsrec2 nodupkey; by gvkey year analys post; run;
+proc sort data=thirdmergeryearsrec2; by gvkey analys; run;
+
+*Here's the plan. Each dataset has two years: pre and post. Thus, at the firm-analyst
+level, there should be no more than two observations. If _n_=1, post=0, and treat=1,
+then that analyst left the sample FOR WHATEVER REASON.;
+proc summary data=thirdmergeryearsrec2;
+ by gvkey analys;
+ var analys;
+ output out=thirdrecount (drop=_type_) mean=;
+run;
+
+*Merge count back;
+proc sql;
+ create table thirdre2
+ as select a.*, b._freq_ as noan
+ from thirdmergeryearsrec2 a left join thirdrecount b
+ on (a.gvkey=b.gvkey) and (a.analys=b.analys);
+quit;*n=1,488,519;
+
+data thirdre3;
+ set thirdre2;
+ if noan=1 & post=0 & treat=1 then leftsam=1;
+ else leftsam=0;
+ if noan=1 & post=0 & treat=1 & itext="STRONG BUY" then leftsamf=1;
+ else leftsamf=0;
+ if noan=1 & post=0 & treat=1 & itext="SELL" then leftsame=1;
+ else if noan=1 & post=0 & treat=1 & itext="UNDERPERFORM" then leftsame=1;
+ *else if noan=1 & post=0 & treat=1 & itext="HOLD" then leftsame=1;
+ else leftsame=0;
+run;
+
+data thirdre4;
+ set thirdre3;
+ if leftsame=1;
+run;
+
+proc sort data=fourthmergeryearsrec; by gvkey year analys post descending treat; run;
+proc sort data=fourthmergeryearsrec out=fourthmergeryearsrec2 nodupkey; by gvkey year analys post; run;
+proc sort data=fourthmergeryearsrec2; by gvkey analys; run;
+
+*Here's the plan. Each dataset has two years: pre and post. Thus, at the firm-analyst
+level, there should be no more than two observations. If _n_=1, post=0, and treat=1,
+then that analyst left the sample FOR WHATEVER REASON.;
+proc summary data=fourthmergeryearsrec2;
+ by gvkey analys;
+ var analys;
+ output out=fourthrecount (drop=_type_) mean=;
+run;
+
+*Merge count back;
+proc sql;
+ create table fourthre2
+ as select a.*, b._freq_ as noan
+ from fourthmergeryearsrec2 a left join fourthrecount b
+ on (a.gvkey=b.gvkey) and (a.analys=b.analys);
+quit;*n=1,488,519;
+
+data fourthre3;
+ set fourthre2;
+ if noan=1 & post=0 & treat=1 then leftsam=1;
+ else leftsam=0;
+ if noan=1 & post=0 & treat=1 & itext="STRONG BUY" then leftsamf=1;
+ else leftsamf=0;
+ if noan=1 & post=0 & treat=1 & itext="SELL" then leftsame=1;
+ else if noan=1 & post=0 & treat=1 & itext="UNDERPERFORM" then leftsame=1;
+ *else if noan=1 & post=0 & treat=1 & itext="HOLD" then leftsame=1;
+ else leftsame=0;
+run;
+
+data fourthre4;
+ set fourthre3;
+ if leftsame=1;
+run;
+
+proc sort data=sixthmergeryearsrec; by gvkey year analys post descending treat; run;
+proc sort data=sixthmergeryearsrec out=sixthmergeryearsrec2 nodupkey; by gvkey year analys post; run;
+proc sort data=sixthmergeryearsrec2; by gvkey analys; run;
+
+*Here's the plan. Each dataset has two years: pre and post. Thus, at the firm-analyst
+level, there should be no more than two observations. If _n_=1, post=0, and treat=1,
+then that analyst left the sample FOR WHATEVER REASON.;
+proc summary data=sixthmergeryearsrec2;
+ by gvkey analys;
+ var analys;
+ output out=sixthrecount (drop=_type_) mean=;
+run;
+
+*Merge count back;
+proc sql;
+ create table sixthre2
+ as select a.*, b._freq_ as noan
+ from sixthmergeryearsrec2 a left join sixthrecount b
+ on (a.gvkey=b.gvkey) and (a.analys=b.analys);
+quit;*n=1,488,519;
+
+data sixthre3;
+ set sixthre2;
+ if noan=1 & post=0 & treat=1 then leftsam=1;
+ else leftsam=0;
+ if noan=1 & post=0 & treat=1 & itext="STRONG BUY" then leftsamf=1;
+ else leftsamf=0;
+ if noan=1 & post=0 & treat=1 & itext="SELL" then leftsame=1;
+ else if noan=1 & post=0 & treat=1 & itext="UNDERPERFORM" then leftsame=1;
+ *else if noan=1 & post=0 & treat=1 & itext="HOLD" then leftsame=1;
+ else leftsame=0;
+run;
+
+data sixthre4;
+ set sixthre3;
+ if leftsame=1;
+run;
+
+proc sort data=ninthmergeryearsrec; by gvkey year analys post descending treat; run;
+proc sort data=ninthmergeryearsrec out=ninthmergeryearsrec2 nodupkey; by gvkey year analys post; run;
+proc sort data=ninthmergeryearsrec2; by gvkey analys; run;
+
+*Here's the plan. Each dataset has two years: pre and post. Thus, at the firm-analyst
+level, there should be no more than two observations. If _n_=1, post=0, and treat=1,
+then that analyst left the sample FOR WHATEVER REASON.;
+proc summary data=ninthmergeryearsrec2;
+ by gvkey analys;
+ var analys;
+ output out=ninthrecount (drop=_type_) mean=;
+run;
+
+*Merge count back;
+proc sql;
+ create table ninthre2
+ as select a.*, b._freq_ as noan
+ from ninthmergeryearsrec2 a left join ninthrecount b
+ on (a.gvkey=b.gvkey) and (a.analys=b.analys);
+quit;*n=1,488,519;
+
+data ninthre3;
+ set ninthre2;
+ if noan=1 & post=0 & treat=1 then leftsam=1;
+ else leftsam=0;
+ if noan=1 & post=0 & treat=1 & itext="STRONG BUY" then leftsamf=1;
+ else leftsamf=0;
+ if noan=1 & post=0 & treat=1 & itext="SELL" then leftsame=1;
+ else if noan=1 & post=0 & treat=1 & itext="UNDERPERFORM" then leftsame=1;
+ *else if noan=1 & post=0 & treat=1 & itext="HOLD" then leftsame=1;
+ else leftsame=0;
+run;
+
+data ninthre4;
+ set ninthre3;
+ if leftsame=1;
+run;
+
+proc sort data=tenthmergeryearsrec; by gvkey year analys post descending treat; run;
+proc sort data=tenthmergeryearsrec out=tenthmergeryearsrec2 nodupkey; by gvkey year analys post; run;
+proc sort data=tenthmergeryearsrec2; by gvkey analys; run;
+
+*Here's the plan. Each dataset has two years: pre and post. Thus, at the firm-analyst
+level, there should be no more than two observations. If _n_=1, post=0, and treat=1,
+then that analyst left the sample FOR WHATEVER REASON.;
+proc summary data=tenthmergeryearsrec2;
+ by gvkey analys;
+ var analys;
+ output out=tenthrecount (drop=_type_) mean=;
+run;
+
+*Merge count back;
+proc sql;
+ create table tenthre2
+ as select a.*, b._freq_ as noan
+ from tenthmergeryearsrec2 a left join tenthrecount b
+ on (a.gvkey=b.gvkey) and (a.analys=b.analys);
+quit;*n=1,488,519;
+
+data tenthre3;
+ set tenthre2;
+ if noan=1 & post=0 & treat=1 then leftsam=1;
+ else leftsam=0;
+ if noan=1 & post=0 & treat=1 & itext="STRONG BUY" then leftsamf=1;
+ else leftsamf=0;
+ if noan=1 & post=0 & treat=1 & itext="SELL" then leftsame=1;
+ else if noan=1 & post=0 & treat=1 & itext="UNDERPERFORM" then leftsame=1;
+ *else if noan=1 & post=0 & treat=1 & itext="HOLD" then leftsame=1;
+ else leftsame=0;
+run;
+
+data tenthre4;
+ set tenthre3;
+ if leftsame=1;
+run;
+
+proc sort data=fourteenthmergeryearsrec; by gvkey year analys post descending treat; run;
+proc sort data=fourteenthmergeryearsrec out=fourteenthmergeryearsrec2 nodupkey; by gvkey year analys post; run;
+proc sort data=fourteenthmergeryearsrec2; by gvkey analys; run;
+
+*Here's the plan. Each dataset has two years: pre and post. Thus, at the firm-analyst
+level, there should be no more than two observations. If _n_=1, post=0, and treat=1,
+then that analyst left the sample FOR WHATEVER REASON.;
+proc summary data=fourteenthmergeryearsrec2;
+ by gvkey analys;
+ var analys;
+ output out=fourteenthrecount (drop=_type_) mean=;
+run;
+
+*Merge count back;
+proc sql;
+ create table fourteenthre2
+ as select a.*, b._freq_ as noan
+ from fourteenthmergeryearsrec2 a left join fourteenthrecount b
+ on (a.gvkey=b.gvkey) and (a.analys=b.analys);
+quit;*n=1,488,519;
+
+data fourteenthre3;
+ set fourteenthre2;
+ if noan=1 & post=0 & treat=1 then leftsam=1;
+ else leftsam=0;
+ if noan=1 & post=0 & treat=1 & itext="STRONG BUY" then leftsamf=1;
+ else leftsamf=0;
+ if noan=1 & post=0 & treat=1 & itext="SELL" then leftsame=1;
+ else if noan=1 & post=0 & treat=1 & itext="UNDERPERFORM" then leftsame=1;
+ *else if noan=1 & post=0 & treat=1 & itext="HOLD" then leftsame=1;
+ else leftsame=0;
+run;
+
+data fourteenthre4;
+ set fourteenthre3;
+ if leftsame=1;
+run;
+
+proc sort data=fifteenthmergeryearsrec; by gvkey year analys post descending treat; run;
+proc sort data=fifteenthmergeryearsrec out=fifteenthmergeryearsrec2 nodupkey; by gvkey year analys post; run;
+proc sort data=fifteenthmergeryearsrec2; by gvkey analys; run;
+
+*Here's the plan. Each dataset has two years: pre and post. Thus, at the firm-analyst
+level, there should be no more than two observations. If _n_=1, post=0, and treat=1,
+then that analyst left the sample FOR WHATEVER REASON.;
+proc summary data=fifteenthmergeryearsrec2;
+ by gvkey analys;
+ var analys;
+ output out=fifteenthrecount (drop=_type_) mean=;
+run;
+
+*Merge count back;
+proc sql;
+ create table fifteenthre2
+ as select a.*, b._freq_ as noan
+ from fifteenthmergeryearsrec2 a left join fifteenthrecount b
+ on (a.gvkey=b.gvkey) and (a.analys=b.analys);
+quit;*n=1,488,519;
+
+data fifteenthre3;
+ set fifteenthre2;
+ if noan=1 & post=0 & treat=1 then leftsam=1;
+ else leftsam=0;
+ if noan=1 & post=0 & treat=1 & itext="STRONG BUY" then leftsamf=1;
+ else leftsamf=0;
+ if noan=1 & post=0 & treat=1 & itext="SELL" then leftsame=1;
+ else if noan=1 & post=0 & treat=1 & itext="UNDERPERFORM" then leftsame=1;
+ *else if noan=1 & post=0 & treat=1 & itext="HOLD" then leftsame=1;
+ else leftsame=0;
+run;
+
+data fifteenthre4;
+ set fifteenthre3;
+ if leftsame=1;
+run;
+
+data allmiss;
+ set thirdre4 fourthre4 sixthre4 ninthre4 tenthre4 fourteenthre4 fifteenthre4;
+run;
+
+proc sort data=allmiss out=allmiss2 nodupkey; by ticker year; run;
 
 *Now get the COMPUSTAT data;
 proc sql;
@@ -872,10 +1312,24 @@ proc sql;*http://sbaleone.bus.miami.edu/PERLCOURSE/SASFILES/SQL_EXAMPLES.sas;
  on (a.gvkey=b.gvkey) and (a.year=b.year);
 quit;
 
-data cscoreibes2;
- set cscoreibes;
+* and (a.post=b.post+1) and (a.year=b.year+2);
+proc sql;*http://sbaleone.bus.miami.edu/PERLCOURSE/SASFILES/SQL_EXAMPLES.sas;
+ create table cscoreibes2
+ as select a.*, b.leftsame as pann
+ from cscoreibes a left join allmiss2 b
+ on (a.gvkey=b.gvkey) and (a.merger=b.merger) and (a.treat=b.treat);
+quit;
+
+data cscoreibes3;
+ set cscoreibes2;
  if coverage=. then delete;
  if cscore=. then delete;
+ if pann=. & treat=1 then npann=1;
+ else if pann=1 & treat=1 then npann=0;
+ if pann=. then pann=0;
+ if npann=. then npann=0;
+ posttreatpann=posttreat*pann;
+ posttreatnpann=posttreat*npann;
 run;
 
 proc sql;*http://sbaleone.bus.miami.edu/PERLCOURSE/SASFILES/SQL_EXAMPLES.sas;
@@ -885,37 +1339,57 @@ proc sql;*http://sbaleone.bus.miami.edu/PERLCOURSE/SASFILES/SQL_EXAMPLES.sas;
  on (a.gvkey=b.gvkey) and (a.year=b.year);
 quit;
 
-data conaccibes2;
- set conaccibes;
+proc sql;*http://sbaleone.bus.miami.edu/PERLCOURSE/SASFILES/SQL_EXAMPLES.sas;
+ create table conaccibes2
+ as select a.*, b.leftsame as pann
+ from conaccibes a left join allmiss2 b
+ on (a.gvkey=b.gvkey) and (a.merger=b.merger) and (a.treat=b.treat);
+quit;
+
+data conaccibes3;
+ set conaccibes2;
  if coverage=. then delete;
  if con=. then delete;
+ if pann=. & treat=1 then npann=1;
+ else if pann=1 & treat=1 then npann=0;
+ if pann=. then pann=0;
+ if npann=. then npann=0;
+ posttreatpann=posttreat*pann;
+ posttreatnpann=posttreat*npann;
 run;
 
-proc sort data=cscoreibes2; by gvkey year post descending treat; run;
-proc sort data=cscoreibes2 out=cscoreibes3 nodupkey; by gvkey year post; run;
-proc sort data=conaccibes2; by gvkey year post descending treat; run;
-proc sort data=conaccibes2 out=conaccibes3 nodupkey; by gvkey year post; run;
+proc sort data=cscoreibes3; by gvkey year post descending treat; run;
+proc sort data=cscoreibes3 out=cscoreibes4 nodupkey; by gvkey year post; run;
+proc sort data=conaccibes3; by gvkey year post descending treat; run;
+proc sort data=conaccibes3 out=conaccibes4 nodupkey; by gvkey year post; run;
 
-proc sort data=cscoreibes3; by gvkey merger year post treat; run;
-proc sort data=conaccibes3; by gvkey merger year post treat; run;
+proc sort data=cscoreibes4; by gvkey merger year post treat; run;
+proc sort data=conaccibes4; by gvkey merger year post treat; run;
 
-proc download data=cscoreibes3; run;
-proc download data=conaccibes3; run;
+proc download data=cscoreibes4; run;
+proc download data=conaccibes4; run;
 
 endrsubmit;
 
 *Save;
-data temp.cscore;
- set cscoreibes3;
+data temp.cscore2;
+ set cscoreibes4;
 run;
 
-data temp.conacc;
- set conaccibes3;
+data temp.conacc2;
+ set conaccibes4;
 run;
 
 *Export to STATA;
-proc export data=temp.cscore outfile= "C:\Users\Temp\Documents\Fall 2013\cscore.dta" replace;
+proc export data=temp.cscore2 outfile= "D:\ay32\My Documents\Fall 2013\cscore2.dta" replace;
 run;
 
-proc export data=temp.conacc outfile= "C:\Users\Temp\Documents\Fall 2013\conacc.dta" replace;
+proc export data=temp.conacc2 outfile= "D:\ay32\My Documents\Fall 2013\conacc2.dta" replace;
 run;
+
+/*Export to STATA;
+proc export data=temp.cscore2 outfile= "C:\Users\Temp\Documents\Fall 2013\cscore2.dta" replace;
+run;
+
+proc export data=temp.conacc2 outfile= "C:\Users\Temp\Documents\Fall 2013\conacc2.dta" replace;
+run;*/
