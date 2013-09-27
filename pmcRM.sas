@@ -637,6 +637,22 @@ data temp.tradefrq2;
  set tradefrq2;
 run;
 
+*Create dataset from which to make bar graph in STATA;
+data tradeprod;
+ set temp.tradeprod2;
+ if cut=1;
+ keep sicthree year cut;
+run;
+
+proc sort data=tradeprod out=tradeprodind nodupkey; by sicthree; run;
+proc sort data=tradeprodind; by year; run;
+
+proc summary data=tradeprodind;
+ by year;
+ var cut;
+ output out=bargraph (drop=_type_) sum=;
+run;
+
 *Export to STATA;
 *http://www.ats.ucla.edu/stat/mult_pkg/faq/fromSAS_toStata.htm;
 proc export data=temp.traderd2 outfile= "D:\ay32\My Documents\Fall 2013\traderd.dta" replace;
@@ -646,5 +662,8 @@ proc export data=temp.tradeprod2 outfile= "D:\ay32\My Documents\Fall 2013\tradep
 run;
 
 proc export data=temp.tradefrq2 outfile= "D:\ay32\My Documents\Fall 2013\tradefrq.dta" replace;
+run;
+
+proc export data=bargraph outfile= "D:\ay32\My Documents\Fall 2013\bargraph.dta" replace;
 run;
 
