@@ -12,6 +12,7 @@ xtset gvkey fyear
 label variable dprod "$\text{APC}_{i,j,t}$"
 label variable postreductionv "$\text{Post-reduction}_{j,t}$"
 label variable postreductionf "$\text{Post-reduction}_{j,t}$"
+label variable postreductionmy "$\text{Post-reduction}_{j,t}$"
 label variable postincreasev "$\text{Post-increase}_{j,t}$"
 label variable postincreasef "$\text{Post-increase}_{j,t}$"
 label variable bench "$\text{Bench}_{i,j,t}$"
@@ -172,6 +173,33 @@ esttab using /home/FUQUA/ay32/STATA/daccpostred.tex, label se star(* 0.10 ** 0.0
 eststo clear
 clear
 
+use /home/FUQUA/ay32/STATA/tradehk.dta
+
+// Set the data as a panel
+destring gvkey, replace
+
+// Create labels for ESTTAB
+label variable dprod "$\text{APC}_{i,j,t}$"
+label variable post "$\text{Post-reduction}_{j,t}$"
+label variable bench "$\text{Bench}_{i,j,t}$"
+label variable posttreat "$\text{Post-reduction}_{j,t}\times\text{Treat}_{i,j,t}$"
+label variable treat "$\text{Treat}_{i,j,t}$"
+label variable benchposttreat "$\text{Bench}_{i,j,t}\times\text{Post-reduction}_{j,t}\times\text{Treat}_{i,j,t}$"
+label variable size "$\text{Size}_{i,j,t}$"
+label variable mtb "$\text{MTB}_{i,j,t}$"
+label variable roa "$\text{ROA}_{i,j,t}$"
+
+eststo clear
+
+eststo: quietly areg dprod bench post treat posttreat benchposttreat size mtb roa i.year, absorb(gvkey) r cl(sicthree)
+
+esttab, label se star(* 0.10 ** 0.05 *** 0.01) ar2 replace indicate(Year Fixed Effects = *year) f cells(b(fmt(3)star) se(par fmt(3)))
+esttab using /home/FUQUA/ay32/STATA/prodhk.tex, label se star(* 0.10 ** 0.05 *** 0.01) ar2 indicate(Year Fixed Effects = *year) replace f cells(b(fmt(3)star) se(par fmt(3)))
+
+eststo clear
+
+clear
+
 // Bar graph
 use /home/FUQUA/ay32/STATA/bargraph3.dta
 label variable cut "Number of tariff rate reductions"
@@ -200,6 +228,7 @@ filefilter /home/FUQUA/ay32/STATA/splitbench.tex /home/FUQUA/ay32/STATA/splitben
 filefilter /home/FUQUA/ay32/STATA/zprod.tex /home/FUQUA/ay32/STATA/zprod2.tex, from("\BS_{") to ("_{") replace
 filefilter /home/FUQUA/ay32/STATA/zrd.tex /home/FUQUA/ay32/STATA/zrd2.tex, from("\BS_{") to ("_{") replace
 filefilter /home/FUQUA/ay32/STATA/daccpostred.tex /home/FUQUA/ay32/STATA/daccpostred2.tex, from("\BS_{") to ("_{") replace
+filefilter /home/FUQUA/ay32/STATA/prodhk.tex /home/FUQUA/ay32/STATA/prodhk2.tex, from("\BS_{") to ("_{") replace
 
 log close
 

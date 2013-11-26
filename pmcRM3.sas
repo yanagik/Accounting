@@ -391,7 +391,7 @@ proc sort data=winsor2prod; by gvkey fyear; run;
 
 *Set data previously uploaded;
 data schott;
- set remote.schotttrade3;
+ set remote.schotttrade4;
 run;
 
 *Merge trade with R&D;
@@ -647,9 +647,146 @@ run;
 
 proc sort data=tradefrq2; by gvkey fyear; run;
 
+data year1992;
+ set tradeprod2;
+ if year<1989 then delete;
+ else if year=1992 then delete;
+ else if year>1995 then delete;
+ if 1993 le year le 1995 then post=1;
+ else if 1989 le year le 1991 then post=0;
+ if sicthree=225 then treat=1;
+ else if sicthree=233 then treat=1;
+ else if sicthree=281 then treat=1;
+ else if sicthree=282 then treat=1;
+ else treat=0;
+run;
+
+data year1994;
+ set tradeprod2;
+ if year<1991 then delete;
+ else if year=1994 then delete;
+ else if year>1997 then delete;
+ if 1995 le year le 1997 then post=1;
+ else if 1991 le year le 1993 then post=0;
+ if sicthree=314 then treat=1;
+ else treat=0;
+run;
+
+data year1995;
+ set tradeprod2;
+ if year<1992 then delete;
+ else if year=1994 then delete;
+ else if year>1998 then delete;
+ if 1996 le year le 1998 then post=1;
+ else if 1992 le year le 1994 then post=0;
+ if sicthree=203 then treat=1;
+ else if sicthree=204 then treat=1;
+ else if sicthree=284 then treat=1;
+ else if sicthree=287 then treat=1;
+ else if sicthree=289 then treat=1;
+ else if sicthree=301 then treat=1;
+ else if sicthree=364 then treat=1;
+ else if sicthree=365 then treat=1;
+ else if sicthree=384 then treat=1;
+ else if sicthree=394 then treat=1;
+ else treat=0;
+run;
+
+data year1996;
+ set tradeprod2;
+ if year<1993 then delete;
+ else if year=1996 then delete;
+ else if year>1999 then delete;
+ if 1997 le year le 1999 then post=1;
+ else if 1993 le year le 1995 then post=0;
+ if sicthree=251 then treat=1;
+ else if sicthree=283 then treat=1;
+ else if sicthree=306 then treat=1;
+ else if sicthree=354 then treat=1;
+ else if sicthree=355 then treat=1;
+ else if sicthree=356 then treat=1;
+ else if sicthree=358 then treat=1;
+ else if sicthree=369 then treat=1;
+ else if sicthree=372 then treat=1;
+ else if sicthree=382 then treat=1;
+ else if sicthree=399 then treat=1;
+ else treat=0;
+run;
+
+data year1997;
+ set tradeprod2;
+ if year<1994 then delete;
+ else if year=1997 then delete;
+ else if year>2000 then delete;
+ if 1998 le year le 2000 then post=1;
+ else if 1994 le year le 1996 then post=0;
+ if sicthree=243 then treat=1;
+ else if sicthree=308 then treat=1;
+ else if sicthree=349 then treat=1;
+ else if sicthree=357 then treat=1;
+ else if sicthree=362 then treat=1;
+ else if sicthree=386 then treat=1;
+ else treat=0;
+run;
+
+data year1998;
+ set tradeprod2;
+ if year<1995 then delete;
+ else if year=1997 then delete;
+ else if year>2001 then delete;
+ if 1999 le year le 2001 then post=1;
+ else if 1995 le year le 1997 then post=0;
+ if sicthree=208 then treat=1;
+ else if sicthree=366 then treat=1;
+ else if sicthree=367 then treat=1;
+ else if sicthree=381 then treat=1;
+ else treat=0;
+run;
+
+data year2000;
+ set tradeprod2;
+ if year<1997 then delete;
+ else if year=1997 then delete;
+ else if year>2003 then delete;
+ if 2001 le year le 2003 then post=1;
+ else if 1997 le year le 1999 then post=0;
+ if sicthree=202 then treat=1;
+ else if sicthree=221 then treat=1;
+ else if sicthree=291 then treat=1;
+ else treat=0;
+run;
+
+data year2002;
+ set tradeprod2;
+ if year<1999 then delete;
+ else if year=1997 then delete;
+ else if year>2005 then delete;
+ if 2003 le year le 2005 then post=1;
+ else if 1999 le year le 2001 then post=0;
+ if sicthree=201 then treat=1;
+ else if sicthree=333 then treat=1;
+ else if sicthree=335 then treat=1;
+ else treat=0;
+run;
+
+data allyears;
+ set year1992 year1994 year1995 year1996 year1997 year1998 year2000 year2002;
+run;
+
+proc sort data=allyears; by gvkey year post descending treat; run;
+proc sort data=allyears out=allyears2 nodupkey; by gvkey year post; run;
+
+data allyears3;
+ set allyears2;
+ if post=. then delete;
+ posttreat=post*treat;
+ benchposttreat=bench*posttreat;
+run;
+
 proc download data=traderd2; run;
 proc download data=tradeprod2; run;
 proc download data=tradefrq2; run;
+proc download data=allyears3; run;
 
 endrsubmit;
 
@@ -664,6 +801,10 @@ run;
 
 data temp.tradefrq3;
  set tradefrq2;
+run;
+
+data temp.allyears3;
+ set allyears3;
 run;
 
 *Create dataset from which to make bar graph in STATA;
@@ -693,13 +834,16 @@ run;
 proc export data=temp.tradefrq3 outfile= "D:\ay32\My Documents\Fall 2013\tradefrq3.dta" replace;
 run;
 
+proc export data=temp.allyears3 outfile= "D:\ay32\My Documents\Fall 2013\tradehk.dta" replace;
+run;
+
 proc export data=bargraph outfile= "D:\ay32\My Documents\Fall 2013\bargraph3.dta" replace;
 run;
 
-*Count number of treated industries in final dataset;
+/*Count number of treated industries in final dataset;
 data test;
  set temp.tradeprod3;
- if cutmy=1;
+ if cutv=1;
 run;
 
 proc sort data=test out=test2; by sicthree year; run;
@@ -710,3 +854,5 @@ data test4;
  set test3;
  keep sicthree year;
 run;*n=44 for cutv. n=37 for raisev. n=28 for cutmy.;
+
+proc sort data=test4; by year; run;*/
