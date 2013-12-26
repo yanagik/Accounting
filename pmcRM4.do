@@ -1,4 +1,4 @@
-//set more off
+set more off
 
 log using /home/FUQUA/ay32/STATA/pmcRM.log, replace
 
@@ -210,19 +210,32 @@ label variable benchpostincv "$\text{Bench}_{i,j,t}\times\text{Post-increase}_{j
 label variable size "$\text{Size}_{i,j,t}$"
 label variable mtb "$\text{MTB}_{i,j,t}$"
 label variable roa "$\text{ROA}_{i,j,t}$"
-
+label variable merlag "$\textit{mer}_{j,t-1}$"
+label variable benchmerlag "$\text{Bench}_{i,j,t}\times\textit{mer}_{j,t-1}$"
 eststo clear
 
 eststo: quietly reg dprod bench postincreasev benchpostincv size mtb roa i.year, r cl(sicthree)
-eststo: quietly ivregress gmm dprod bench size mtb roa (postincreasev benchpostincv=merlag benchmerlag) i.year, r cl(sicthree)
-esttab, label se star(* 0.10 ** 0.05 *** 0.01) replace indicate(Year Fixed Effects = *year) f cells(b(fmt(3)star) se(par fmt(3)))
+eststo: quietly ivregress 2sls dprod bench size mtb roa (postincreasev benchpostincv=merlag benchmerlag) i.year, r cl(sicthree)
+esttab, label se star(* 0.10 ** 0.05 *** 0.01) replace indicate(Year Fixed Effects = *year) f cells(b(fmt(3)star) se(par fmt(3))) depvars
 esttab using /home/FUQUA/ay32/STATA/iv.tex, label se star(* 0.10 ** 0.05 *** 0.01) indicate(Year Fixed Effects = *year) replace f cells(b(fmt(3)star) se(par fmt(3)))
 
 eststo clear
 
+// mtitles("OLS" "First Stage" "First Stage" "Second Stage") 
+
+eststo: quietly reg postincreasev bench size mtb roa merlag benchmerlag i.year, r cl(sicthree)
+test merlag=benchmerlag=0
+estadd scalar F_post=r(F)
+eststo: quietly reg benchpostincv bench size mtb roa merlag benchmerlag i.year, r cl(sicthree)
+test merlag=benchmerlag=0
+estadd scalar F_benchpost=r(F)
+esttab, label se star(* 0.10 ** 0.05 *** 0.01) replace indicate(Year Fixed Effects = *year) f cells(b(fmt(3)star) se(par fmt(3))) stats(F_post F_benchpost, labels("$\mathbf{H}_{0}: \text{Instruments are jointly insignificant}$" "$\mathbf{H}_{0}: \text{Instruments are jointly insignificant}$"))
+esttab using /home/FUQUA/ay32/STATA/ivfs.tex, label se star(* 0.10 ** 0.05 *** 0.01) indicate(Year Fixed Effects = *year) replace f cells(b(fmt(3)star) se(par fmt(3))) stats(F_post F_benchpost, labels("\textit{F}-\text{test of} $\mathbf{H}_{0}: \text{Instruments are jointly insignificant}$" "\textit{F}-\text{test of} $\mathbf{H}_{0}: \text{Instruments are jointly insignificant}$"))
+eststo clear
 clear
 
-/*use /home/FUQUA/ay32/STATA/prodinchkfediv2.dta
+// Instrumental variables, alternative research design
+use /home/FUQUA/ay32/STATA/prodinchkfediv2.dta
 
 // Create labels for ESTTAB
 label variable dprod "$\text{APC}_{i,j,t}$"
@@ -238,9 +251,12 @@ label variable postinctreat "$\text{Treat}_{i,j,t}\times\text{Post-increase}_{j,
 label variable benchpostinctreat "$\text{Bench}_{i,j,t}\times\text{Treat}_{i,j,t}\times\text{Post-increase}_{j,t}$"
 
 eststo: quietly reg dprod bench treat postinc postinctreat benchpostinctreat size mtb roa i.year, r cl(sicthree)
-eststo: quietly ivregress gmm dprod bench treat size mtb roa (postinc postinctreat benchpostinctreat=mer merlag mertreat merlagtreat benchmertreat benchmerlagtreat) i.year, r cl(sicthree)
+eststo: quietly ivregress 2sls dprod bench treat size mtb roa (postinc postinctreat benchpostinctreat=mer merlag mertreat merlagtreat benchmertreat benchmerlagtreat) i.year, r cl(sicthree)
+esttab, label se star(* 0.10 ** 0.05 *** 0.01) replace indicate(Year Fixed Effects = *year) f cells(b(fmt(3)star) se(par fmt(3)))
+esttab using /home/FUQUA/ay32/STATA/ivhk.tex, label se star(* 0.10 ** 0.05 *** 0.01) indicate(Year Fixed Effects = *year) replace f cells(b(fmt(3)star) se(par fmt(3))) mtitles("OLS" "IV") depvars
 
-clear*/
+eststo clear
+clear
 
 // Bar graph
 use /home/FUQUA/ay32/STATA/bargraph3.dta
@@ -272,6 +288,8 @@ filefilter /home/FUQUA/ay32/STATA/zrd.tex /home/FUQUA/ay32/STATA/zrd2.tex, from(
 filefilter /home/FUQUA/ay32/STATA/daccpostred.tex /home/FUQUA/ay32/STATA/daccpostred2.tex, from("\BS_{") to ("_{") replace
 filefilter /home/FUQUA/ay32/STATA/prodhk.tex /home/FUQUA/ay32/STATA/prodhk2.tex, from("\BS_{") to ("_{") replace
 filefilter /home/FUQUA/ay32/STATA/iv.tex /home/FUQUA/ay32/STATA/iv2.tex, from("\BS_{") to ("_{") replace
+filefilter /home/FUQUA/ay32/STATA/ivhk.tex /home/FUQUA/ay32/STATA/ivhk2.tex, from("\BS_{") to ("_{") replace
+filefilter /home/FUQUA/ay32/STATA/ivfs.tex /home/FUQUA/ay32/STATA/ivfs2.tex, from("\BS_{") to ("_{") replace
 
 log close
 
