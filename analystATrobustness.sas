@@ -476,6 +476,7 @@ data fifteenthmergeryears;*2005;
  else treat=0;
 run;
 
+*The difference between this *.sas file and the other one is that this one excludes the tenth and fourteenth mergers;
 data allobs;
  set thirdmergeryears fourthmergeryears sixthmergeryears ninthmergeryears fifteenthmergeryears;
 run;
