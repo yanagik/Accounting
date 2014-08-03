@@ -1,7 +1,7 @@
 *Temporary library name;
 *Change as needed;
-libname temp 'D:\ay32\My Documents\Fall 2013';
-*libname temp 'C:\Users\Temp\Documents\Fall 2013';
+*libname temp 'D:\ay32\My Documents\Fall 2013';
+libname temp 'C:\Users\Temp\Documents\Fall 2013';
 
 *Notes for winsorization macro;
 /**********************************************************************************************/
@@ -159,7 +159,7 @@ proc sql;
  create table compustatcrsp
  as select a.*, b.lpermno as permno
  from compstatnames a left join crsp.ccmxpf_linktable b
- on (a.gvkey=b.gvkey) and (a.datadate >= b.linkdt) and (a.datadate <= b.linkenddt);
+ on (a.gvkey=b.gvkey) and (a.datadate >= b.linkdt or linkdt=.B) and (a.datadate <= b.linkenddt or linkenddt=.E);
 quit;*n=1,488,519;
 
 *IBES data for subsample analysis by analyst following (yes / no);
@@ -817,7 +817,7 @@ proc sql;
  create table compustatcrsp
  as select a.*, b.lpermno as permno
  from compstatnames a left join crsp.ccmxpf_linktable b
- on (a.gvkey=b.gvkey) and (a.datadate >= b.linkdt) and (a.datadate <= b.linkenddt);
+ on (a.gvkey=b.gvkey) and (a.datadate >= b.linkdt or linkdt=.B) and (a.datadate <= b.linkenddt or linkenddt=.E);
 quit;*n=1,488,519;
 
 data compustatcrsp2;
